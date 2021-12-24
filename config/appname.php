@@ -1,0 +1,4 @@
+<?php
+  //TokoRetailBersama
+  $encryptedAppName = "TokoBerkatTaniDanTernak";
+?>
