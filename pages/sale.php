@@ -156,7 +156,7 @@ include "../components/topapp.php";
                         <div class="col-xl-6">
                             <div class="mb-3">
                                 <label for="txtRemark" class="form-label">Catatan</label>
-                                <textarea class="form-control" id="txtRemark" rows="5" placeholder="Masukkan Catatan" autocomplete="off" maxlength="2000"></textarea>
+                                <textarea class="form-control maintenance-form" id="txtRemark" rows="5" placeholder="Masukkan Catatan" autocomplete="off" maxlength="2000"></textarea>
                             </div>
                         </div>
                         <div class="col-xl-6">
@@ -164,14 +164,14 @@ include "../components/topapp.php";
                                 <label for="txtTotalPayment" class="form-label">Total Bayar <span class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <div class="input-group-text">Rp</div>
-                                    <input type="text" class="form-control maintenance-form autonumber" id="txtTotalPayment" placeholder="Masukkan Total Bayar" autocomplete="off" data-maximum-value="2147483647" data-minimum-value="0">
+                                    <input type="text" class="form-control maintenance-form autochange" id="txtTotalPayment" placeholder="Masukkan Total Bayar" autocomplete="off" data-maximum-value="2147483647" data-minimum-value="0">
                                 </div>
                             </div>
                             <div class="mb-3">
                                 <label for="txtTotalChange" class="form-label">Kembalian</label>
                                 <div class="input-group">
                                     <div class="input-group-text">Rp</div>
-                                    <input type="text" class="form-control maintenance-form" id="txtTotalChange" placeholder="0" autocomplete="off">
+                                    <input type="text" class="form-control maintenance-form autochange" id="txtTotalChange" placeholder="0" autocomplete="off">
                                 </div>
                             </div>
                         </div>
@@ -250,4 +250,7 @@ include "../components/topapp.php";
 <?php
 include "../components/bottomapp.php";
 ?>
+<script text="text/javascript">
+    const kasir =  "<?php echo $_SESSION['fullname']; ?>";
+</script>
 <script src="../assets/script/sale.js"></script>

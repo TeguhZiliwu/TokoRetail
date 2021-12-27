@@ -1,9 +1,9 @@
 let edit = false;
 const currentFormID = "sale";
+let contact = "";
 
 $(document).ready(async function () {
   if (await checkAuthorize(currentFormID)) {
-    mainTable.buttons().container().appendTo("#tblMainData_wrapper .col-md-6:eq(0)");
     itemList.buttons().container().appendTo("#tblItemList_wrapper .col-md-6:eq(0)");
     invalidImport.buttons().container().appendTo("#tblInvalidData_wrapper .col-md-6:eq(0)");
     $(".dt-buttons").css("display", "none");
@@ -11,6 +11,7 @@ $(document).ready(async function () {
     await getFormName(currentFormID);
     formProp(true);
     $("#divFixedDiscount, #divPercentageDiscount").css("display", "none");
+    contact = await getGlobalSetting("ContactAdmin");
   } else {
     window.location.replace("../errorpage/403");
   }
@@ -18,7 +19,7 @@ $(document).ready(async function () {
 
 const formProp = (isDisabled) => {
   $(".maintenance-form, #btnSave, #btnCancel").prop("disabled", isDisabled);
-  $("#btnAdd, #btnImport, button[name='editaction'], button[name='deleteaction']").prop("disabled", !isDisabled);
+  $("#btnAdd, #btnImport").prop("disabled", !isDisabled);
 
   $("#txtItemDesc")
     .css("resize", isDisabled ? "none" : "vertical")
@@ -40,6 +41,7 @@ const clearForm = () => {
   $(".form-control").val("").trigger("change");
   buyingPriceAutoNum.set("");
   qtyAutoNum.set("");
+  totalPaymentAutoNum.set("");
   $("#txtQty").removeClass("is-invalid");
   $("body").find("[aria-labelledby='select2-ddItemCode-container']").removeClass("select2-invalid");
   itemList.clear().draw();
@@ -49,7 +51,7 @@ const clearForm = () => {
 };
 
 const clearItemField = () => {
-  $(".form-control").val("").trigger("change");
+  $(".form-control:not(.autochange):not(#txtRemark)").val("").trigger("change");
   buyingPriceAutoNum.set("");
   qtyAutoNum.set("");
   discountAutoNum.set("");
@@ -247,7 +249,8 @@ const buyingPriceAutoNum = new AutoNumeric("#txtPurchasePrice", {
 
 const totalPaymentAutoNum = new AutoNumeric("#txtTotalPayment", {
   decimalPlaces: 0,
-  digitGroupSeparator: "",
+  decimalCharacter: ",",
+  digitGroupSeparator: ".",
   modifyValueOnWheel: false,
 });
 
@@ -292,26 +295,6 @@ $("#btnImport").click(function () {
 
 $("#btnInvalidExport").click(function () {
   $("#invalidTableExportExcel").click();
-});
-
-$("#btnSearch").click(async function (e) {
-  await loadData();
-});
-
-$("#tblMainData").on("click", 'button[name="editaction"]', function () {
-  edit = true;
-  const rowData = mainTable.row($(this).parents("tr")).data();
-  $("#txtGroupID").val(rowData.GroupID);
-  $("#txtGroupDescription").val(rowData.GroupDesc);
-
-  enabledForm();
-  $('a[href="#tabs-detail"]').tab("show");
-  $("#txtGroupID").prop("disabled", true);
-});
-
-$("#tblMainData").on("click", 'button[name="deleteaction"]', function () {
-  const rowData = mainTable.row($(this).parents("tr")).data();
-  confirmDelete(rowData.GroupID);
 });
 
 $("#btnExport").click(function () {
@@ -372,11 +355,15 @@ $("#btnAddToList").click(async function () {
       SubTotal: SubTotal,
     };
 
+    if (itemList.rows().count() == 0) {
+      $("#txtTotalPayment, #txtRemark").prop("disabled", false);
+    }
+
     newData.push(obj);
     itemList.rows.add(newData).draw();
     clearItemField();
+    $("input[type='radio'][name='discount'][value='No Discount']").prop("checked", true).trigger("change");
     // $("#btnSave, #btnCancel").prop("disabled", false);
-    $("#txtTotalPayment").prop("disabled", false);
 
     if (itemList.rows().count() > 0) {
       let currentSubTotal = 0;
@@ -394,26 +381,31 @@ $("#btnAddToList").click(async function () {
       const fixSubTotal = convert.join(".").split("").reverse().join("");
 
       $("#lblTotal").html(`Total : Rp <strong>${fixSubTotal}</strong>`);
+
+      if ($("#txtTotalChange").val() != "") {
+        calculateTotalChanges();
+      }
     }
   }
 });
 
 $("#tblItemList").on("click", 'button[name="deleteitemtaction"]', function () {
-  const rowData = mainTable.row($(this).parents("tr")).data();
   itemList.rows($(this).parents("tr")).remove().draw();
 
   if (itemList.rows().count() == 0) {
     $("#lblTotal").html(`Total : Rp <strong>0</strong>`);
     $("#btnSave, #btnCancel, #txtTotalPayment").prop("disabled", true);
+    $("#txtTotalChange").val("");
+    totalPaymentAutoNum.set("");
   } else {
     let currentSubTotal = 0;
     itemList
-      .column(8)
+      .column(9)
       .nodes()
       .to$()
       .each(function (index) {
         const thisSubTotal = $(this).closest("td").text();
-        currentSubTotal = currentSubTotal + parseInt(thisSubTotal);
+        currentSubTotal = currentSubTotal + parseInt(thisSubTotal.replace(/\D/g, ""));
       });
 
     const format = currentSubTotal.toString().split("").reverse().join("");
@@ -421,6 +413,7 @@ $("#tblItemList").on("click", 'button[name="deleteitemtaction"]', function () {
     const fixSubTotal = convert.join(".").split("").reverse().join("");
 
     $("#lblTotal").html(`Total : Rp <strong>${fixSubTotal}</strong>`);
+    calculateTotalChanges();
   }
 });
 
@@ -473,7 +466,7 @@ $("#fileUpload").change(function () {
 
 $("input[type='radio'][name='discount']").change(function () {
   const thischecked = $(this).is(":checked");
-  $("#txtDiscount, #ddPercentageDiscount").val("").trigger("change");  
+  $("#txtDiscount, #ddPercentageDiscount").val("").trigger("change");
   discountAutoNum.set("");
   if (thischecked) {
     const thischeckedVal = $(this).val();
@@ -484,85 +477,15 @@ $("input[type='radio'][name='discount']").change(function () {
       $("#divFixedDiscount").css("display", "none");
     } else if (thischeckedVal === "Fixed") {
       $("#divPercentageDiscount").css("display", "none");
-      $("#divFixedDiscount").css("display", "block"); 
+      $("#divFixedDiscount").css("display", "block");
     }
   }
 });
-// End change function
 
-const mainTable = $("#tblMainData").DataTable({
-  columns: [
-    {
-      data: "",
-      render: function (data, type, row, meta) {
-        return meta.row + 1 + ".";
-      },
-      className: "align-middle",
-    },
-    {
-      data: "ItemCode",
-      className: "align-middle",
-    },
-    {
-      data: "ItemName",
-      className: "align-middle",
-    },
-    {
-      data: "Category",
-      className: "align-middle",
-    },
-    {
-      data: "UOM",
-      className: "align-middle",
-    },
-    {
-      data: "ItemType",
-      className: "align-middle",
-    },
-    {
-      data: "SellingPrice",
-      className: "align-middle",
-    },
-    {
-      data: "Qty",
-      className: "align-middle",
-    },
-  ],
-  scrollX: !0,
-  scrollY: "350px",
-  scrollCollapse: !0,
-  searching: !1,
-  language: {
-    paginate: {
-      previous: "<i class='mdi mdi-chevron-left'>",
-      next: "<i class='mdi mdi-chevron-right'>",
-    },
-    emptyTable: "Tidak ada data yang tersedia",
-  },
-  drawCallback: function () {
-    const isEdit = $("#btnAdd").prop("disabled");
-    $(".dataTables_paginate > .pagination").addClass("pagination-rounded");
-
-    if (isEdit) {
-      $("button[name='editaction'], button[name='deleteaction']").prop("disabled", isEdit);
-    }
-    $($.fn.dataTable.tables(true)).DataTable().columns.adjust();
-  },
-  buttons: [
-    {
-      extend: "excelHtml5",
-      title: "",
-      filename: "Data Stock",
-      attr: {
-        id: "mainTableExportExcel",
-      },
-      exportOptions: {
-        //orthogonal: 'export'
-      },
-    },
-  ],
-  dom: "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" + "<'row'<'col-sm-12'tr>>" + "<'row mt-2'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+$("#txtTotalPayment").on("input", function () {
+  calculateTotalChanges();
 });
+// End change function
 
 const invalidImport = $("#tblInvalidData").DataTable({
   columns: [
@@ -712,10 +635,19 @@ const itemList = $("#tblItemList").DataTable({
         //orthogonal: 'export'
       },
       messageTop: function () {
-        return "Toko Berkat Tani dan Ternak";
+        const dt = new Date();
+        const fixCurrentDate = dt.getDate().toString().padStart(2, '0') + "-" + 
+        (dt.getMonth()+1).toString().padStart(2, '0') + "-" + 
+        dt.getFullYear().toString().padStart(4, '0') + " " + 
+        dt.getHours().toString().padStart(2, '0') + ":" + 
+        dt.getMinutes().toString().padStart(2, '0') + ":" + 
+        dt.getSeconds().toString().padStart(2, '0');
+        return "Toko Berkat Tani dan Ternak \nContact : " + contact + " \nKasir : " + kasir + " \nTanggal : " + fixCurrentDate;
       },
       messageBottom: function () {
-        return "\n " + $("#lblTotal").text();
+        const cash = $("#txtTotalPayment").val();
+        const change = $("#txtTotalChange").val();
+        return "\n " + $("#lblTotal").text() + "\nTunai : Rp " + cash + "\n------------------------------------------------------------\nKembalian : Rp " + change;
       },
       footer: true,
       customize: function (doc) {
@@ -745,36 +677,6 @@ const itemList = $("#tblItemList").DataTable({
   },
   dom: "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" + "<'row'<'col-sm-12'tr>>" + "<'row mt-2'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
 });
-
-// Load data
-const loadData = async () => {
-  try {
-    const Search = $("#txtSearch").val();
-    const url = "../controller/stock/loaddata.php";
-    const param = {
-      search: Search,
-    };
-
-    showLoading();
-    mainTable.clear().draw();
-    const response = await callAPI(url, "GET", param);
-
-    if (response.success) {
-      mainTable.rows.add(response.data).draw();
-      hideLoading();
-    } else {
-      if (response.msg.includes("[ERROR]")) {
-        response.msg = response.msg.replace("[ERROR] ", "");
-        showNotif(response.msg, 15000, "error", "top-end");
-      } else {
-        showNotif(response.msg, 15000, "warning", "top-end");
-      }
-      hideLoading();
-    }
-  } catch (error) {
-    showNotif(error, 15000, "error", "top-end");
-  }
-};
 
 const saveData = async () => {
   try {
@@ -811,11 +713,11 @@ const saveData = async () => {
     if (response.success) {
       $("#pdfStruck").click();
       showNotif(response.msg, 15000, "success", "top-end");
-      await loadData();
       disabledForm();
       clearForm();
       $('a[href="#tabs-data"]').tab("show");
       $($.fn.dataTable.tables(true)).DataTable().columns.adjust();
+      hideLoading();
     } else {
       if (response.msg.includes("[ERROR]")) {
         response.msg = response.msg.replace("[ERROR] ", "");
@@ -825,66 +727,6 @@ const saveData = async () => {
       }
       hideLoading();
     }
-  } catch (error) {
-    showNotif(error, 15000, "error", "top-end");
-  }
-};
-
-const confirmDelete = (groupid) => {
-  const swalWithBootstrapButtons = Swal.mixin({
-    customClass: {
-      confirmButton: "btn btn-success me-2",
-      cancelButton: "btn btn-danger",
-    },
-    buttonsStyling: false,
-  });
-
-  swalWithBootstrapButtons
-    .fire({
-      title: "Hapus Data",
-      text: "Apakah anda yakin ingin menghapus data ini?",
-      icon: "question",
-      showCancelButton: true,
-      buttonsStyling: false,
-      confirmButtonText: "Ya",
-      cancelButtonText: "Tidak",
-      allowOutsideClick: false,
-    })
-    .then((result) => {
-      if (result.isConfirmed) {
-        deleteData(groupid);
-      } else {
-        setTimeout(function () {
-          $($.fn.dataTable.tables(true)).DataTable().columns.adjust();
-        }, 400);
-      }
-    });
-  $($.fn.dataTable.tables(true)).DataTable().columns.adjust();
-};
-
-const deleteData = async (groupid) => {
-  try {
-    const url = "../controller/group/delete.php";
-    const param = {
-      GroupID: groupid,
-    };
-
-    showLoading();
-    const response = await callAPI(url, "POST", param);
-
-    if (response.success) {
-      showNotif(response.msg, 15000, "success", "top-end");
-      await loadData();
-    } else {
-      if (response.msg.includes("[ERROR]")) {
-        response.msg = response.msg.replace("[ERROR] ", "");
-        showNotif(response.msg, 15000, "error", "top-end");
-      } else {
-        showNotif(response.msg, 15000, "warning", "top-end");
-      }
-      hideLoading();
-    }
-    clearForm();
   } catch (error) {
     showNotif(error, 15000, "error", "top-end");
   }
@@ -907,7 +749,6 @@ const uploadFile = async (thisfile) => {
 
         if (response.success && response.successInsert) {
           showNotif(response.msg, 15000, "success", "top-end");
-          await loadData();
         } else {
           if (response.datainvalid.length > 0) {
             $("#modalInvalidUpload").on("shown.bs.modal", function (e) {
@@ -918,11 +759,7 @@ const uploadFile = async (thisfile) => {
                 })
                 .columns.adjust();
             });
-            // $("#totalInvalidImport").text(response.totalinvalid);
-            // $("#totalSuccessImport").text(response.totalsuccess);
             $("#modalInvalidUpload").modal("show");
-
-            console.log(response);
             invalidImport.clear().draw();
             invalidImport.rows.add(response.datainvalid).draw();
           }
@@ -933,12 +770,8 @@ const uploadFile = async (thisfile) => {
           } else {
             showNotif(response.msg, 15000, "warning", "top-end");
           }
-
-          if (response.datainvalid.length > 0) {
-            await loadData();
-          }
-          hideLoading();
         }
+        hideLoading();
       } else {
         showNotif("Silakan pilih hanya file Excel.", 15000, "warning", "top-end");
       }
@@ -989,5 +822,43 @@ const getPercentageDiscount = async () => {
     }
   } catch (error) {
     showNotif(error, 15000, "error", "top-end");
+  }
+};
+
+const calculateTotalChanges = () => {
+  let total = 0;
+  const totalPayment = parseInt($("#txtTotalPayment").val().replace(/\D/g, ""));
+
+  if (itemList.rows().count() > 0) {
+    let currentSubTotal = 0;
+    itemList
+      .column(9)
+      .nodes()
+      .to$()
+      .each(function (index) {
+        const thisSubTotal = $(this).closest("td").text();
+        currentSubTotal = currentSubTotal + parseInt(thisSubTotal.replace(/\D/g, ""));
+      });
+
+    total = currentSubTotal;
+
+    // $("#lblTotal").html(`Total : Rp <strong>${fixSubTotal}</strong>`);
+    const totalChanges = totalPayment - total;
+    const format = totalChanges.toString().split("").reverse().join("");
+    const convert = format.match(/\d{1,3}/g);
+    const fixTotalChange = convert.join(".").split("").reverse().join("");
+    $("#txtTotalChange").val((totalChanges < 0 ? "- " : "") + fixTotalChange);
+
+    if ($("#txtTotalPayment").val() != "") {
+      if (totalChanges < 0) {
+        $("#btnSave, #btnCancel").prop("disabled", true);
+      } else {
+        $("#btnSave, #btnCancel").prop("disabled", false);
+      }
+    } else {
+      $("#btnSave, #btnCancel").prop("disabled", true);
+    }
+  } else {    
+    $("#btnSave, #btnCancel").prop("disabled", true);
   }
 };
