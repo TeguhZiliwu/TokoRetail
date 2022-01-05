@@ -8,10 +8,13 @@ session_start();
 
 $json = new stdClass();
 $conn = openConn();
-$userLogin = mysqli_real_escape_string($conn, $_SESSION['userid']);
+$isPromotionPage = mysqli_real_escape_string($conn, $_GET['isPromotionPage']);
+if ($isPromotionPage == "false") {
+    $userLogin = mysqli_real_escape_string($conn, $_SESSION['userid']);
+}
 $query = "";
 
-if (!empty($userLogin)) {
+if (!empty($userLogin) || (empty($userLogin) && $isPromotionPage == "true")) {
     try {
         $FetchData = mysqli_real_escape_string($conn, $_GET['FetchData']);
 

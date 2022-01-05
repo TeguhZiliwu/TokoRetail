@@ -365,6 +365,13 @@ const mainTable = $("#tblMainData").DataTable({
         },
         {
             data: "SellingPrice",
+            render: function (value) {
+                const format = value.toString().split('').reverse().join('');
+                const convert = format.match(/\d{1,3}/g);
+                const fixSubTotal = convert.join('.').split('').reverse().join('');
+
+                return "Rp " + fixSubTotal;
+            },
             className: "align-middle",
         },
         {

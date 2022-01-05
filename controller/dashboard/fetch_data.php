@@ -55,7 +55,7 @@ if (!empty($userLogin)) {
         } else if ($FetchData == "getIncomeDashboard") { 
             $Search = mysqli_real_escape_string($conn, $_GET['search']);
             $resultdata = array();
-            $query = ("SELECT MONTH(CURRENT_DATE()) AS month, SUM(B.purchaseprice * B.qty) AS total
+            $query = ("SELECT MONTH(CURRENT_DATE()) AS month, (SUM(B.purchaseprice * B.qty) - SUM(B.discount)) AS total
             FROM ttransaction A
             INNER JOIN ttransactiondet B ON A.transactionid = B.transactionid
             WHERE A.transactiontype = 'OUT'
@@ -78,6 +78,11 @@ if (!empty($userLogin)) {
                 $jsonstring = json_encode($json);
                 echo $jsonstring;
             } else {
+                $data = array(
+                    'Bulan' => null,
+                    'Total' => null
+                );
+                array_push($resultdata, $data);
                 $json->success = true;
                 $json->data = $resultdata;
                 $jsonstring = json_encode($json);
@@ -108,6 +113,10 @@ if (!empty($userLogin)) {
                 $jsonstring = json_encode($json);
                 echo $jsonstring;
             } else {
+                $data = array(
+                    'TotalTransaction' => 0
+                );
+                array_push($resultdata, $data);
                 $json->success = true;
                 $json->data = $resultdata;
                 $jsonstring = json_encode($json);
@@ -138,6 +147,10 @@ if (!empty($userLogin)) {
                 $jsonstring = json_encode($json);
                 echo $jsonstring;
             } else {
+                $data = array(
+                    'TotalTransaction' => 0
+                );
+                array_push($resultdata, $data);
                 $json->success = true;
                 $json->data = $resultdata;
                 $jsonstring = json_encode($json);

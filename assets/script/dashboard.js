@@ -116,16 +116,19 @@ const getIncomeInfo = async () => {
     if (response.success) {
       const data = response.data;
       let Total = data[0].Total;
-      const format = Total.toString().split("").reverse().join("");
-      const convert = format.match(/\d{1,3}/g);
-      const fixTotal = convert.join(",").split("").reverse().join("");
-      $("#lblIncome").html(fixTotal);
-      var delay = $(this).attr("data-delay") ? $(this).attr("data-delay") : 100; //default is 100
-      var time = $(this).attr("data-time") ? $(this).attr("data-time") : 1200; //default is 1200
-      $("#lblIncome").counterUpCustom({
-        delay: delay,
-        time: time,
-      });
+
+      if (Total != null) {
+        const format = Total.toString().split("").reverse().join("");
+        const convert = format.match(/\d{1,3}/g);
+        const fixTotal = convert.join(",").split("").reverse().join("");
+        $("#lblIncome").html(fixTotal);
+        var delay = $(this).attr("data-delay") ? $(this).attr("data-delay") : 100; //default is 100
+        var time = $(this).attr("data-time") ? $(this).attr("data-time") : 1200; //default is 1200
+        $("#lblIncome").counterUpCustom({
+          delay: delay,
+          time: time,
+        });
+      }
     } else {
       if (response.msg.includes("[ERROR]")) {
         response.msg = response.msg.replace("[ERROR] ", "");

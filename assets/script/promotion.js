@@ -2,7 +2,7 @@ $(document).ready(async function () {
   await getPromotionSlide();
   await getCategory();
   await getItem();
-  let getContactAdmin = await getGlobalSetting("ContactAdmin");
+  let getContactAdmin = await getGlobalSetting("ContactAdmin", true); 
   $("#contact").html('<i class="fab fa-whatsapp"></i> ' + getContactAdmin);
   $(".promo-text-contact").html('<i class="fab fa-whatsapp"></i> ' + getContactAdmin);
 });
@@ -19,13 +19,13 @@ $("#txtSearch").keypress(function (e) {
 });
 
 $("#contact").click(async function () {
-  let getContactAdmin = await getGlobalSetting("ContactAdmin");
+  let getContactAdmin = await getGlobalSetting("ContactAdmin", true);
   getContactAdmin = getContactAdmin.substring(1);
   window.open("https://wa.me/" + getContactAdmin + "?text=", "_blank");
 });
 
 $("body").on("click", ".promo-text-contact", async function () {
-  let getContactAdmin = await getGlobalSetting("ContactAdmin");
+  let getContactAdmin = await getGlobalSetting("ContactAdmin", true);
   getContactAdmin = getContactAdmin.substring(1);
   console.log($(this).parents(".card-body").find(".promo-text-itemname"))
   const getItemName = $(this).parents(".card").find(".promo-text-itemname").text();
@@ -41,8 +41,9 @@ $("body").on("click", ".promo-text-desc", function () {
 
 const getPromotionSlide = async () => {
   try {
-    let fileList = await getGlobalSetting("SlidePromotionPage");
-    let getPath = await getGlobalSetting("PathPromotionPicture");
+    let fileList = await getGlobalSetting("SlidePromotionPage", true);
+    let getPath = await getGlobalSetting("PathPromotionPicture", true);
+    console.log(getPath)
     fileList = fileList.split("|");
     for (let i = 0; i < fileList.length; i++) {
       const path = "../" + getPath + fileList[i];
@@ -92,7 +93,7 @@ const getItem = async () => {
 
           if (itemPicList.length > 0) {
             for (let i = 0; i < itemPicList.length; i++) {
-              let getPath = await getGlobalSetting("PathItemPicture");
+              let getPath = await getGlobalSetting("PathItemPicture", true);
               const fileName = itemPicList[i].PictureName;
               const path = "../" + getPath + fileName;
               const active = i === 0 ? "active" : "";
@@ -246,3 +247,100 @@ $("#ddCategory").select2({
   placeholder: "Pilih Kategori",
   allowClear: true,
 });
+
+const callAPI = async (url, method, params = {}, uploadfile = false) => {
+  try {
+    let options = {
+      method,
+    };
+
+    if (method === "GET") {
+      url += "?" + new URLSearchParams(params).toString();
+    } else {
+      options.body = uploadfile === false ? JSON.stringify(params) : params;
+      if (uploadfile == false) {
+        options.headers = {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        };
+      }
+    }
+
+    const result = await fetch(url, options);
+    //             const restult2 = await fetch(url, options).then((response) => {
+    //     return response.text();
+    //   })
+    //   .then((data) => {
+    //       console.log(data)
+    //   });
+
+    if (result.ok) {
+      return result.json();
+    }
+
+    throw await response.text();
+  } catch (error) {
+    throw error;
+  }
+};
+
+const showNotif = (message, timer, notiftype, position) => {
+  const Toast = Swal.mixin({
+    toast: true,
+    position: position,
+    showConfirmButton: false,
+    timer: timer,
+    backdrop: false,
+    timerProgressBar: true,
+    showCloseButton: true,
+    didOpen: (toast) => {
+      toast.addEventListener("mouseenter", Swal.stopTimer);
+      toast.addEventListener("mouseleave", Swal.resumeTimer);
+    },
+  });
+
+  Toast.fire({
+    icon: notiftype,
+    title: message,
+  });
+};
+
+const showLoading = async () => {
+  $(".backdrop-loading").css("display", "block");
+};
+
+const hideLoading = async () => {
+  $(".backdrop-loading").css("display", "none");
+};
+
+const getGlobalSetting = async (settingid, ispromotionpage = false) => {
+  let globalValue = "";
+  try {
+    const url = "../controller/globalsetting/fetch_data.php";
+    const param = {
+      FetchData: "getGlobalValue",
+      SettingID: settingid,
+      isPromotionPage: "true"
+    };
+
+    showLoading();
+    const response = await callAPI(url, "GET", param);
+
+    if (response.success) {
+      globalValue = response.data[0].SettingValue;
+      hideLoading();
+    } else {
+      if (response.msg.includes("[ERROR]")) {
+        response.msg = response.msg.replace("[ERROR] ", "");
+        showNotif(response.msg, 15000, "error", "top-end");
+      } else {
+        showNotif(response.msg, 15000, "warning", "top-end");
+      }
+      hideLoading();
+    }
+    return globalValue;
+  } catch (error) {
+    showNotif(error, 15000, "error", "top-end");
+    return globalValue;
+  }
+};

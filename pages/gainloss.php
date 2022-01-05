@@ -42,10 +42,16 @@ include "../components/topapp.php";
                                         <th>Nama Barang</th>
                                         <th>Harga Jual</th>
                                         <th>Harga Beli</th>
-                                        <th>Untung / Rugi</th>
+                                        <th>Untung / Rugi (Rp)</th>
+                                        <th>Info</th>
                                     </tr>
                                 </thead>
                             </table>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <label class="float-end" id="lblTotal">Total : Rp <strong>0</strong></label>
                         </div>
                     </div>
                 </div>

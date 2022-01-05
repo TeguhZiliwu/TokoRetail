@@ -95,7 +95,7 @@ include "../components/topapp.php";
                                         <th>Diskon</th>
                                         <th>Sub Total</th>
                                         <th>Catatan</th>
-                                        <th>Nama Kasir</th>
+                                        <th>Transaksi Oleh</th>
                                     </tr>
                                 </thead>
                             </table>

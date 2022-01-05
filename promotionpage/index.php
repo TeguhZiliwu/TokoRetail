@@ -231,7 +231,7 @@
 
     <!-- App js -->
     <script src="../assets/js/app.js"></script>
-    <script src="../assets/script/mainapp.js"></script>
+    <!-- <script src="../assets/script/mainapp.js"></script> -->
 
     <script src="../assets/script/promotion.js"></script>
 </body>

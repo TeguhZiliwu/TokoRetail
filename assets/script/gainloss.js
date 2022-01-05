@@ -184,9 +184,26 @@ const mainTable = $("#tblMainData").DataTable({
           minus = "- ";
         }
         if (type === "export") {
-          return data;
+          return minus + "Rp " + fixSubTotal;
         } else {
           return '<p class="' + profit + ' m-0">' + minus + "Rp " + fixSubTotal + "</p>";
+        }
+      },
+      className: "align-middle",
+    },
+    {
+      data: "GainLoss",
+      render: function (data, type, row, meta) {
+        let gainorloss = "Untung";
+        let classprofit = "bg-soft-success text-success";
+        if (parseInt(data) <= 0) {
+          gainorloss = "Rugi";
+          classprofit = "bg-soft-danger text-danger";
+        }
+        if (type === "export") {
+          return gainorloss;
+        } else {
+          return '<span class="badge ' + classprofit + '" style="font-size: 13px;">' + gainorloss + "</span>";
         }
       },
       className: "align-middle",
@@ -243,6 +260,35 @@ const loadData = async () => {
 
     if (response.success) {
       mainTable.rows.add(response.data).draw();
+
+      let currentSubTotal = 0;
+      mainTable
+        .column(5)
+        .nodes()
+        .to$()
+        .each(function (index) {
+          const thisSubTotal = $(this).closest("td").text();
+          const hasNegative = thisSubTotal.charAt(0);
+          let fixThisSubTotal = 0;
+          fixThisSubTotal = parseInt(thisSubTotal.replace(/\D/g, ""));
+          if (hasNegative == "-") {
+            fixThisSubTotal = -fixThisSubTotal;
+          }
+          currentSubTotal = currentSubTotal + fixThisSubTotal;
+        });
+
+      let minus = "";
+      let classGain = "text-success";
+      if (currentSubTotal < 0) {
+        minus = "- ";
+        classGain = "text-danger";
+      }
+      const format = currentSubTotal.toString().split("").reverse().join("");
+      const convert = format.match(/\d{1,3}/g);
+      const fixSubTotal = convert.join(".").split("").reverse().join("");
+
+      $("#lblTotal").html(`Total : <span class="${classGain}">${minus} Rp <strong>${fixSubTotal}</strong></span>`);
+
       hideLoading();
     } else {
       if (response.msg.includes("[ERROR]")) {

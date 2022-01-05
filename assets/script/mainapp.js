@@ -293,13 +293,14 @@ const getFormName = async (currentFormID) => {
   }
 };
 
-const getGlobalSetting = async (settingid) => {
+const getGlobalSetting = async (settingid, ispromotionpage = false) => {
   let globalValue = "";
   try {
     const url = "../controller/globalsetting/fetch_data.php";
     const param = {
       FetchData: "getGlobalValue",
       SettingID: settingid,
+      isPromotionPage: ispromotionpage ? "true" : "false"
     };
 
     showLoading();

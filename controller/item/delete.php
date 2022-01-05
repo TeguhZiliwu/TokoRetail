@@ -30,7 +30,7 @@ if (!empty($userLogin)) {
         if ($result->num_rows > 0) {
             $Stock = 0;
             while ($data = $result->fetch_assoc()) {
-                $Stock =  $data['stock'];
+                $Stock =  $data['qty'];
             }
             if ($Stock > 0) {
                 $json->success = false;
