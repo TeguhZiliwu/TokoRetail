@@ -1,133 +1,117 @@
 <?php
-include '../config/appname.php';
-include '../config/dbconnection.php';
-include '../config/errorlog.php';
-include '../assets/library/fpdf184/fpdf.php';
 
-session_name($encryptedAppName);
-session_start();
+require '../assets/library/printdriver/vendor/autoload.php';
 
-$json = new stdClass();
-$conn = openConn();
-$userLogin = mysqli_real_escape_string($conn, $_SESSION['userid']);
-$query = "";
+use Mike42\Escpos\Printer;
+use Mike42\Escpos\EscposImage;
+use Mike42\Escpos\PrintConnectors\FilePrintConnector;
+use Mike42\Escpos\PrintConnectors\WindowsPrintConnector;
 
-if (!empty($userLogin)) {
-    try {
-        $Search = "";
-        $resultdata = array();
+/* Open the printer; this will change depending on how it is connected */
+$connector = new WindowsPrintConnector("POS-58-Series");
+$printer = new Printer($connector);
 
-        $query = ("SELECT categorycode, category, categorydesc, createdby, createddate, updatedby, updateddate FROM tcategory WHERE (categorycode LIKE ? OR category LIKE ? OR categorydesc LIKE ?)");
-        $stmt = $conn->prepare($query);
-        $Search = '%' . $Search . '%';
-        $stmt->bind_param("sss", $Search, $Search, $Search);
-        $stmt->execute();
-        $result = $stmt->get_result();
+/* Information for the receipt */
+$items = array(
+    new item("Example item #1", "Rp3.000.000"),
+    new item("2x @Rp1.500.000 Rp3.000.000"),
+    new item("Another thing", "Rp100.000"),
+    new item("Something else", "1.00"),
+    new item("A final item", "4.45"),
+);
+$subtotal = new item('Subtotal', '12.95');
+$tax = new item('A local tax', '1.30');
+$total = new item('Total', '14.25', true);
+/* Date is kept the same for testing */
+// $date = date('l jS \of F Y h:i:s A');
+$date = date("Y-m-d H:i:s");
 
-        if ($result->num_rows > 0) {
-            //A4 width : 219mm
-            //default margin : 10mm each side
-            //writable horizontal : 219-(10*2)=189mm
+/* Start the printer */
+// $logo = EscposImage::load("resources/escpos-php.png", false);
+$printer = new Printer($connector);
 
-            //create pdf object
-            $pdf = new FPDF('P', 'mm', 'A4');
-            //add new page
-            $pdf->AddPage();
-            //set font to arial, bold, 14pt
-            $pdf->SetFont('Arial', 'B', 14);
+/* Print top logo */
+$printer -> setJustification(Printer::JUSTIFY_CENTER);
+// $printer -> graphics($logo);
 
-            //Cell(width , height , text , border , end line , [align] )
+/* Name of shop */
+$printer -> selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
+$printer -> text("Toko Berkat\n");
+$printer -> text("Tani & Ternak\n");
+$printer -> selectPrintMode();
+$printer -> text("Jl. Pertanian Blok B No 2 Kebun Raya.\n");
+$printer -> feed();
 
-            $pdf->Cell(130, 5, 'TOKO BERKAT TANI & TERNAK', 0, 1);
+/* Line */
+$printer -> setJustification(Printer::JUSTIFY_LEFT);
+$printer -> text("Tanggal : ". $date . "\n");
+$printer -> text("Kasir : Teguh Ziliwu\n");
+$printer -> setEmphasis(false);
+$printer -> text("--------------------------------\n");
+$printer -> setEmphasis(false);
 
-            //set font to arial, regular, 12pt
-            $pdf->SetFont('Arial', '', 12);
+/* Items */
+$printer -> setJustification(Printer::JUSTIFY_CENTER);
+$printer -> setEmphasis(false);
+foreach ($items as $item) {
+    $printer -> text($item);
+}
+$printer -> setEmphasis(true);
+$printer -> text($subtotal);
+$printer -> setEmphasis(false);
+$printer -> feed();
 
-            $pdf->Cell(130, 5, 'Jl. Laksamana Madya, Batu Aji', 0, 0);
-            $pdf->Cell(59, 5, '', 0, 1); //end of line
+/* Tax and total */
+$printer -> text($tax);
+$printer -> selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
+$printer -> text($total);
+$printer -> selectPrintMode();
 
-            $pdf->Cell(130, 5, 'Batam, Indonesia', 0, 0);
-            $pdf->Cell(30, 5, 'Date', 0, 0);
-            $pdf->Cell(34, 5, '[dd/mm/yyyy]', 0, 1); //end of line
 
-            $pdf->Cell(130, 5, 'Phone [+12345678]', 0, 0);
-            $pdf->Cell(30, 5, 'Transaction ID', 0, 0);
-            $pdf->Cell(34, 5, '[1234567]', 0, 1); //end of line
+/* Line */
+$printer -> feed(2);
+$printer -> setJustification(Printer::JUSTIFY_CENTER);
+$printer -> setEmphasis(false);
+$printer -> text("--------------------------------\n");
+$printer -> setEmphasis(false);
 
-            //make a dummy empty cell as a vertical spacer
-            $pdf->Cell(189, 10, '', 0, 1); //end of line
+/* Footer */
+$printer -> setJustification(Printer::JUSTIFY_CENTER);
+$printer -> text("Mohon diperiksa kembali \n");
+$printer -> text("produk yang telah dibeli. \n");
+$printer -> text("Terimakasih telah berbelanja di toko kami.\n");
 
-            //invoice contents
-            $pdf->SetFont('Arial', 'B', 12);
+/* Cut the receipt and open the cash drawer */
+$printer -> cut();
+$printer -> pulse();
 
-            $pdf->Cell(80, 5, 'Nama Barang', 1, 0);
-            $pdf->Cell(25, 5, 'Jumlah', 1, 0);
-            $pdf->Cell(25, 5, 'Harga', 1, 0);
-            $pdf->Cell(25, 5, 'Diskon', 1, 0);
-            $pdf->Cell(34, 5, 'Sub Total', 1, 1); //end of line
+$printer -> close();
 
-            $pdf->SetFont('Arial', '', 12);
+/* A wrapper to do organise item names & prices into columns */
+class item
+{
+    private $name;
+    private $price;
+    private $dollarSign;
 
-            //Numbers are right-aligned so we give 'R' after new line parameter
-            
-            $pdf->Cell(80, 5, 'UltraCool Fridge', 1, 0);
-            $pdf->Cell(25, 5, '2', 1, 0, 'R');
-            $pdf->Cell(25, 5, 'Rp 6.500', 1, 0, 'R');
-            $pdf->Cell(25, 5, 'Rp 0', 1, 0, 'R');
-            $pdf->Cell(34, 5, '6500', 1, 1, 'R'); //end of line
-            
-            $pdf->Cell(80, 5, 'UltraCool FridgeSupaclean Diswasher', 1, 0);
-            $pdf->Cell(25, 5, '2', 1, 0, 'R');
-            $pdf->Cell(25, 5, 'Rp 6.500', 1, 0, 'R');
-            $pdf->Cell(25, 5, 'Rp 0', 1, 0, 'R');
-            $pdf->Cell(34, 5, '6500', 1, 1, 'R'); //end of line
-
-            $pdf->Cell(130, 5, 'Something Else', 1, 0);
-            $pdf->Cell(25, 5, '-', 1, 0);
-            $pdf->Cell(34, 5, '1,000', 1, 1, 'R'); //end of line
-
-            //summary
-            $pdf->Cell(130, 5, '', 0, 0);
-            $pdf->Cell(25, 5, 'Subtotal', 0, 0);
-            $pdf->Cell(4, 5, '$', 1, 0);
-            $pdf->Cell(30, 5, '4,450', 1, 1, 'R'); //end of line
-
-            $pdf->Cell(130, 5, '', 0, 0);
-            $pdf->Cell(25, 5, 'Taxable', 0, 0);
-            $pdf->Cell(4, 5, '$', 1, 0);
-            $pdf->Cell(30, 5, '0', 1, 1, 'R'); //end of line
-
-            $pdf->Cell(130, 5, '', 0, 0);
-            $pdf->Cell(25, 5, 'Tax Rate', 0, 0);
-            $pdf->Cell(4, 5, '$', 1, 0);
-            $pdf->Cell(30, 5, '10%', 1, 1, 'R'); //end of line
-
-            $pdf->Cell(130, 5, '', 0, 0);
-            $pdf->Cell(25, 5, 'Total Due', 0, 0);
-            $pdf->Cell(4, 5, '$', 1, 0);
-            $pdf->Cell(30, 5, '4,450', 1, 1, 'R'); //end of line
-            //output the result
-            $pdf->Output();
-        } else {
-            $json->success = true;
-            $json->data = $resultdata;
-            $jsonstring = json_encode($json);
-            echo $jsonstring;
-        }
-        $stmt->close();
-    } catch (\Throwable $e) {
-        $errorMsg = 'Error on line ' . $e->getLine() . ' in ' . $e->getFile() . ': ' . $e->getMessage();
-        saveErrorLog($errorMsg, "Category", "Load Data", $userLogin, $conn);
-        $json->success = false;
-        $json->msg = "[ERROR] Terjadi kesalahan, harap hubungi teknisi.";
-        $jsonstring = json_encode($json);
-        echo $jsonstring;
-    } finally {
-        closeConn($conn);
+    public function __construct($name = '', $price = '', $dollarSign = false)
+    {
+        $this -> name = $name;
+        $this -> price = $price;
+        $this -> dollarSign = $dollarSign;
     }
-} else {
-    $json->success = false;
-    $json->msg = "Silahkan login kedalam aplikasi!";
-    $jsonstring = json_encode($json);
-    echo $jsonstring;
+
+    public function __toString()
+    {
+        $rightCols = 10;
+        $leftCols = 22;
+        if ($this -> dollarSign) {
+            $leftCols = $leftCols / 2 - $rightCols / 2;
+        }
+        $left = str_pad($this -> name, $leftCols) ;
+
+        $sign = ($this -> dollarSign ? '$ ' : '');
+        $right = str_pad($sign . $this -> price, $rightCols, ' ', STR_PAD_LEFT);
+        return "$left$right\n";
+    }
 }
