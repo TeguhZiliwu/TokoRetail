@@ -7,21 +7,23 @@ use Mike42\Escpos\PrintConnectors\FilePrintConnector;
 use Mike42\Escpos\PrintConnectors\WindowsPrintConnector;
 
 /* Open the printer; this will change depending on how it is connected */
+
 $connector = new WindowsPrintConnector("POS-58-Series");
 $printer = new Printer($connector);
 $date = date("Y-m-d H:i:s");
-  
+
 /* Print top logo */
-$printer -> setJustification(Printer::JUSTIFY_CENTER);
+$printer->setJustification(Printer::JUSTIFY_CENTER);
 // $printer -> graphics($logo);
 
 /* Name of shop */
-$printer -> selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
-$printer -> text("Toko Berkat\n");
-$printer -> text("Tani & Ternak\n");
-$printer -> selectPrintMode();
-$printer -> text("Jl. Pertanian Blok B No 2 Kebun Raya.\n");
-$printer -> feed();
+$printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
+$printer->text("Toko Berkat\n");
+$printer->text("Tani & Ternak\n");
+$printer->selectPrintMode();
+$printer->setFont(Printer::FONT_B);
+$printer->text("Ruko Bunga Raya Blok B No.5 Batam Center.\n");
+$printer->feed();
 
 // Data transaksi
 $printer->initialize();
@@ -35,32 +37,25 @@ $printer->setEmphasis(true);
 $printer->text("Ice Lychee Tea\n");
 $printer->setEmphasis(false);
 $printer->text(buatBaris3Kolom("2x", "@Rp15.000", "Rp30.000"));
-$printer->setEmphasis(true);
-$printer->text("Hot/Ice Matcha\n");
-$printer->setEmphasis(false);
-$printer->text(buatBaris3Kolom("2x", "@Rp5.000", "Rp10.000"));
-$printer->setEmphasis(true);
-$printer->text("Cajun Spicy Fries\n");
-$printer->setEmphasis(false);
-$printer->text(buatBaris3Kolom("1x", "@Rp8.200", "Rp16.400"));
-$printer -> text("--------------------------------\n");
+$printer->text("--------------------------------\n");
 $printer->text(buatBaris3Kolom('', 'Total', "56.400"));
 $printer->text("\n");
 $printer->feed(3);
 
- // Pesan penutup
+// Pesan penutup
 $printer->initialize();
-$printer -> setJustification(Printer::JUSTIFY_CENTER);
-$printer -> text("Mohon diperiksa kembali \n");
-$printer -> text("produk yang telah dibeli. \n");
-$printer -> text("Terimakasih telah berbelanja di toko kami.\n");
+$printer->setJustification(Printer::JUSTIFY_CENTER);
+$printer->text("Mohon diperiksa kembali \n");
+$printer->text("produk yang telah dibeli. \n");
+$printer->text("Terimakasih telah berbelanja di toko kami.\n");
 
 $printer->feed(3); // mencetak 5 baris kosong agar terangkat (pemotong kertas saya memiliki jarak 5 baris dari toner)
 $printer->close();
 
 
 // membuat fungsi untuk membuat 1 baris tabel, agar dapat dipanggil berkali-kali dgn mudah
-function buatBaris3Kolom($kolom1, $kolom2, $kolom3) {
+function buatBaris3Kolom($kolom1, $kolom2, $kolom3)
+{
     // Mengatur lebar setiap kolom (dalam satuan karakter)
     $lebar_kolom_1 = 10;
     $lebar_kolom_2 = 10;

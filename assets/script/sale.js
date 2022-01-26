@@ -690,11 +690,13 @@ const saveData = async () => {
       .to$()
       .each(function (index) {
         const thisItemCode = $(this).closest("td").text();
+        const thisItemName = $(this).closest("tr").find("td:eq(2)").text();
         const thisPurchasePrice = $(this).closest("tr").find("td:eq(6)").text();
         const thisQty = $(this).closest("tr").find("td:eq(7)").text();
         const thisDiscount = $(this).closest("tr").find("td:eq(8)").text();
         const obj = {
           ItemCode: thisItemCode,
+          ItemName: thisItemName,
           Qty: thisQty.replace(/\D/g, ""),
           PurchasePrice: thisPurchasePrice.replace(/\D/g, ""),
           Discount: thisDiscount.replace(/\D/g, ""),
@@ -711,11 +713,10 @@ const saveData = async () => {
     const response = await callAPI(url, "POST", param);
 
     if (response.success) {
-      $("#pdfStruck").click();
+      await printReciept();
       showNotif(response.msg, 15000, "success", "top-end");
       disabledForm();
       clearForm();
-      $('a[href="#tabs-data"]').tab("show");
       $($.fn.dataTable.tables(true)).DataTable().columns.adjust();
       hideLoading();
     } else {
@@ -731,6 +732,56 @@ const saveData = async () => {
     showNotif(error, 15000, "error", "top-end");
   }
 };
+
+const printReciept = async () => {
+  try {
+    const url = "../controller/printreciept/print.php";
+    const arrItemList = [];
+
+    itemList
+      .column(1)
+      .nodes()
+      .to$()
+      .each(function (index) {
+        const thisItemCode = $(this).closest("td").text();
+        const thisItemName = $(this).closest("tr").find("td:eq(2)").text();
+        const thisPurchasePrice = $(this).closest("tr").find("td:eq(6)").text();
+        const thisQty = $(this).closest("tr").find("td:eq(7)").text();
+        const thisDiscount = $(this).closest("tr").find("td:eq(8)").text();
+        const obj = {
+          ItemCode: thisItemCode,
+          ItemName: thisItemName,
+          Qty: thisQty.replace(/\D/g, ""),
+          PurchasePrice: thisPurchasePrice.replace(/\D/g, ""),
+          Discount: thisDiscount.replace(/\D/g, ""),
+        };
+        arrItemList.push(obj);
+      });
+
+    const param = {
+      ItemList: arrItemList,
+    };
+
+    showLoading();
+    const response = await callAPI(url, "POST", param);
+
+    if (response.success) {
+      showNotif(response.msg, 15000, "success", "top-end");
+      $($.fn.dataTable.tables(true)).DataTable().columns.adjust();
+      hideLoading();
+    } else {
+      if (response.msg.includes("[ERROR]")) {
+        response.msg = response.msg.replace("[ERROR] ", "");
+        showNotif(response.msg, 15000, "error", "top-end");
+      } else {
+        showNotif(response.msg, 15000, "warning", "top-end");
+      }
+      hideLoading();
+    }
+  } catch (error) {
+    showNotif(error, 15000, "error", "top-end");
+  }
+}
 
 const uploadFile = async (thisfile) => {
   try {
