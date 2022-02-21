@@ -33,8 +33,8 @@ const enabledForm = async () => {
 
 const clearForm = () => {
   $(".form-control").val("").trigger("change");
-  buyingPriceAutoNum.set("");
   qtyAutoNum.set("");
+  purchasePriceAutoNum.set("");
   $("body").find("[aria-labelledby='select2-ddItemCode-container']").removeClass("select2-invalid");
   $("#txtPurchasePrice, #txtQty").removeClass("is-invalid");  
   itemList.clear().draw();
@@ -43,8 +43,8 @@ const clearForm = () => {
 
 const clearItemField = () => {
   $(".form-control").val("").trigger("change");
-  buyingPriceAutoNum.set("");
   qtyAutoNum.set("");
+  purchasePriceAutoNum.set("");
 };
 
 const validateSubmit = () => {
@@ -140,7 +140,8 @@ $("#ddItemCode").select2({
           itemname: item.ItemName,
           category: item.Category,
           uom: item.UOM,
-          itemtype: item.ItemType
+          itemtype: item.ItemType, 
+          sellingprice: item.SellingPrice, 
         });
       });
       return {
@@ -166,20 +167,29 @@ $("#ddItemCode").select2({
   $("#txtCategory").val(data.category);
   $("#txtUOM").val(data.uom);
   $("#txtItemType").val(data.itemtype);
+  sellingPriceAutoNum.set(data.sellingprice);
 
   $($.fn.dataTable.tables(true)).DataTable().columns.adjust();
 });
 
-const buyingPriceAutoNum = new AutoNumeric('#txtPurchasePrice', {
+const sellingPriceAutoNum = new AutoNumeric('#txtSellingPrice', {
   decimalPlaces: 0,
-  digitGroupSeparator: '',
-  modifyValueOnWheel: false
+  decimalCharacter: ",",
+  digitGroupSeparator: ".",
+  modifyValueOnWheel: false,
 });
 
 const qtyAutoNum = new AutoNumeric('#txtQty', {
   decimalPlaces: 0,
   digitGroupSeparator: '',
   modifyValueOnWheel: false
+});
+
+const purchasePriceAutoNum = new AutoNumeric("#txtPurchasePrice", {
+  decimalPlaces: 0,
+  decimalCharacter: ",",
+  digitGroupSeparator: ".",
+  modifyValueOnWheel: false,
 });
 
 // End initialize element
@@ -399,6 +409,13 @@ const itemList = $("#tblItemList").DataTable({
     },
     {
       data: "PurchasePrice",
+      render: function (value) {
+        const format = value.toString().split("").reverse().join("");
+        const convert = format.match(/\d{1,3}/g);
+        const fixSubTotal = convert.join(".").split("").reverse().join("");
+
+        return "Rp " + fixSubTotal;
+      },
       className: "align-middle",
     },
     {
@@ -482,7 +499,7 @@ const saveData = async () => {
       const obj = {
         ItemCode: thisItemCode,
         Qty: thisQty,
-        PurchasePrice: thisPurchasePrice
+        PurchasePrice: thisPurchasePrice.replace(/\D/g, "")
       };
       arrItemList.push(obj);
     });

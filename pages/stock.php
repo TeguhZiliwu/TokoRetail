@@ -98,6 +98,13 @@ include "../components/topapp.php";
                                         <input type="text" class="form-control" id="txtItemType" placeholder="Jenis Barang" autocomplete="off" disabled>
                                     </div>
                                     <div class="mb-3">
+                                        <label for="txtSellingPrice" class="form-label">Harga Jual</label>
+                                        <div class="input-group">
+                                            <div class="input-group-text">Rp</div>
+                                            <input type="text" class="form-control autonumber" id="txtSellingPrice" autocomplete="off" data-maximum-value="2147483647" data-minimum-value="0" disabled>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
                                         <label for="txtPurchasePrice" class="form-label">Harga Beli <span class="text-danger">*</span></label>
                                         <div class="input-group">
                                             <div class="input-group-text">Rp</div>

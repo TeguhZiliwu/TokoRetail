@@ -243,7 +243,8 @@ $("#ddPercentageDiscount").select2({
 
 const buyingPriceAutoNum = new AutoNumeric("#txtPurchasePrice", {
   decimalPlaces: 0,
-  digitGroupSeparator: "",
+  decimalCharacter: ",",
+  digitGroupSeparator: ".",
   modifyValueOnWheel: false,
 });
 
@@ -262,7 +263,8 @@ const qtyAutoNum = new AutoNumeric("#txtQty", {
 
 const discountAutoNum = new AutoNumeric("#txtDiscount", {
   decimalPlaces: 0,
-  digitGroupSeparator: "",
+  decimalCharacter: ",",
+  digitGroupSeparator: ".",
   modifyValueOnWheel: false,
 });
 
@@ -330,7 +332,7 @@ $("#btnAddToList").click(async function () {
         break;
     }
 
-    let SubTotal = parseInt($("#txtQty").val()) * parseInt($("#txtPurchasePrice").val());
+    let SubTotal = parseInt($("#txtQty").val()) * parseInt($("#txtPurchasePrice").val().replace(/\D/g, ""));
 
     if (Discount != 0) {
       if (discounttype.val() == "Percentage") {
@@ -339,6 +341,8 @@ $("#btnAddToList").click(async function () {
         Discount = totaldisc;
         SubTotal = parseInt(SubTotal) - Discount;
       } else if (discounttype.val() == "Fixed") {
+        const disc = Discount.replace(/\D/g, "");
+        Discount = disc;
         SubTotal = parseInt(SubTotal) - parseInt(Discount);
       }
     }

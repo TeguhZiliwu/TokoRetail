@@ -123,7 +123,6 @@ if (!empty($userLogin)) {
     } catch (\Throwable $e) {
         $errorMsg = 'Error on line ' . $e->getLine() . ' in ' . $e->getFile() . ': ' . $e->getMessage();
         saveErrorLog($errorMsg, "Print Reciept", "Print", $userLogin, $conn);
-        $stmt->close();
         $json->success = false;
         $json->msg = "[ERROR] Terjadi kesalahan saat print struk, harap hubungi teknisi.";
         $jsonstring = json_encode($json);

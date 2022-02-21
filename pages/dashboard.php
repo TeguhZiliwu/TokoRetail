@@ -48,7 +48,7 @@ include "../components/topapp.php";
     </div>
 
     <div class="row">
-        <div class="col-xl-6">
+        <div class="col-12">
             <div class="card">
                 <div class="card-body">
                     <div class="card-widgets">

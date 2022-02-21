@@ -26,7 +26,7 @@ const formProp = (isDisabled) => {
     } else if (settingValue == "isPrintActive") {
       $("#rowSettingValue").css("display", "none");
       $("#SettingValue").css("display", "block");
-      const checkboxEl = '<div class="row checkbox-input-wrapper"><div class="col-12"><div class="form-check form-check-blue" id="divChangePassword">' + '<input class="form-check-input form-check-input-large" type="checkbox" value="" id="cbbChangePassword">' + "</div></div></div>";
+      const checkboxEl = '<div class="row checkbox-input-wrapper"><div class="col-12"><div class="form-check form-check-blue" id="divChangePassword">' + '<input class="form-check-input form-check-input-large" type="checkbox" value="" id="cbbSettingValue">' + "</div></div></div>";
       $("#txtSettingValue").remove();
       $("#SettingValue").append(checkboxEl);
     } else {
@@ -50,6 +50,12 @@ const clearForm = () => {
   $("#txtSettingID, #txtRemark").removeClass("is-invalid");
   pictureTable.clear().draw();
   pictureItemDeletion = [];
+  
+  $(".checkbox-input-wrapper, #txtSettingValue").remove();
+  const inputEl = '<input type="text" class="form-control maintenance-form" id="txtSettingValue" placeholder="Masukkan Setting Value" autocomplete="off" maxlength="2000">';
+  $("#SettingValue").append(inputEl);
+  $("#rowSettingValue").css("display", "none");
+  $("#SettingValue").css("display", "block");
 };
 
 const validateSubmit = () => {
@@ -89,9 +95,11 @@ const validateSubmit = () => {
       validateDesc = "Silahkan pilih minimal 1 foto.";
     }
   } else {
-    if (SettingValue.val().replace(/\s/g, "") == "" || SettingValue.val().length > 2000) {
-      valid = false;
-      SettingValue.addClass("is-invalid");
+    if (SettingID.val().replace(/\s/g, "") != "isPrintActive") {
+      if (SettingValue.val().replace(/\s/g, "") == "" || SettingValue.val().length > 2000) {
+        valid = false;
+        SettingValue.addClass("is-invalid");
+      }
     }
   }
 
@@ -111,12 +119,7 @@ $("#btnAdd").click(async function () {
 });
 
 $("#btnCancel").click(async function () {
-  $('a[href="#tabs-data"]').tab("show");  
-  $(".checkbox-input-wrapper, #txtSettingValue").remove();
-  const inputEl = '<input type="text" class="form-control maintenance-form" id="txtSettingValue" placeholder="Masukkan Setting Value" autocomplete="off" maxlength="2000">';
-  $("#SettingValue").append(inputEl);
-  $("#rowSettingValue").css("display", "none");
-  $("#SettingValue").css("display", "block");  
+  $('a[href="#tabs-data"]').tab("show");
   formProp(true);
   clearForm();
 });
@@ -135,7 +138,6 @@ $("#tblMainData").on("click", 'button[name="editaction"]', async function () {
   edit = true;
   const rowData = mainTable.row($(this).parents("tr")).data();
   $("#txtSettingID").val(rowData.SettingID);
-  $("#txtSettingValue").val(rowData.SettingValue);
   $("#txtRemark").val(rowData.Remark);
 
   enabledForm();
@@ -145,6 +147,10 @@ $("#tblMainData").on("click", 'button[name="editaction"]', async function () {
   const settingValue = $("#txtSettingID").val();
   if (settingValue == "SlidePromotionPage") {
     await getPicture();
+  } else if (settingValue == "isPrintActive") {
+    $("#cbbSettingValue").prop("checked", rowData.SettingValue.toUpperCase() == "TRUE" ? true : false);
+  } else {
+    $("#txtSettingValue").val(rowData.SettingValue);
   }
 
   $($.fn.dataTable.tables(true)).DataTable().columns.adjust();
@@ -449,7 +455,7 @@ const saveData = async () => {
   try {
     const url = "../controller/globalsetting/create_update.php";
     const SettingID = $("#txtSettingID").val();
-    let SettingValue = $("#txtSettingValue").val();
+    let SettingValue = "";
     const Remark = $("#txtRemark").val();
 
     if (SettingID == "SlidePromotionPage") {
@@ -473,6 +479,10 @@ const saveData = async () => {
         });
 
       SettingValue = SettingValue.substring(0, SettingValue.length - 1);
+    } else if (SettingID == "isPrintActive") {
+      SettingValue = $("#cbbSettingValue").prop("checked") == true ? "true" : "false";
+    } else {
+      SettingValue = $("#txtSettingValue").val();
     }
 
     const param = {

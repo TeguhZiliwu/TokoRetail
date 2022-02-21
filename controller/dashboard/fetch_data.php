@@ -25,8 +25,7 @@ if (!empty($userLogin)) {
                        INNER JOIN tuom C ON A.uomcode = C.uomcode
                        LEFT JOIN tstock D ON A.itemcode = D.itemcode
                        WHERE IFNULL(D.qty, 0) <= 15
-                       ORDER BY D.qty ASC
-                       LIMIT 10;");
+                       ORDER BY D.qty ASC;");
             $stmt = $conn->prepare($query);
             $stmt->execute();
             $result = $stmt->get_result();
