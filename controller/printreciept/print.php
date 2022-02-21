@@ -25,86 +25,101 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 if (!empty($userLogin)) {
     try {
-        $ItemList = $postdata->ItemList;
-        $printerName = getGlobalSetting($conn, "PrinterName");
-        $addressStore = getGlobalSetting($conn, "AddressStore");
-        $cashierName = getFullName($conn, $userLogin);
-        $items = array();
-        $date = date("Y-m-d H:i:s");
 
-        /* Open the printer; this will change depending on how it is connected */
-        $connector = new WindowsPrintConnector($printerName);
-        $printer = new Printer($connector);
+        $isPrintActive = getGlobalSetting($conn, "isPrintActive");
 
-        /* Print top logo */
-        $printer->setJustification(Printer::JUSTIFY_CENTER);
-        // $printer -> graphics($logo);
+        if (strtoupper($isPrintActive) == "TRUE") {
 
-        /* Name of shop */
-        $printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
-        $printer->text("Toko Berkat\n");
-        $printer->text("Tani & Ternak\n");
-        $printer->selectPrintMode();
-        $printer->setFont(Printer::FONT_B);
-        $printer->text($addressStore . "\n");
-        $printer->feed();
+            $ItemList = $postdata->ItemList;
+            $printerName = getGlobalSetting($conn, "PrinterName");
+            $addressStore = getGlobalSetting($conn, "AddressStore");
+            $cashierName = getFullName($conn, $userLogin);
+            $items = array();
 
-        // Data transaksi
-        $printer->initialize();
-        $printer->text("Kasir : " . $cashierName . "\n");
-        $printer->text("Waktu : " . $date . "\n");
+            $tz = 'Asia/Jakarta';
+            $dt = new DateTime("now", new DateTimeZone($tz));
+            $date = $dt->format('Y-m-d G:i:s');
 
-        // Membuat tabel
-        $printer->initialize(); // Reset bentuk/jenis teks
-        $printer->text("--------------------------------\n");
+            /* Open the printer; this will change depending on how it is connected */
+            $connector = new WindowsPrintConnector($printerName);
+            $printer = new Printer($connector);
 
-        $Total = 0;
+            /* Print top logo */
+            $printer->setJustification(Printer::JUSTIFY_CENTER);
+            // $printer -> graphics($logo);
 
-        if (count($ItemList) > 0) {
-            for ($i = 0; $i < count($ItemList); $i++) {
-                $ItemCode = $ItemList[$i]->ItemCode;
-                $ItemName = $ItemList[$i]->ItemName;
-                $Qty = $ItemList[$i]->Qty;
-                $PurchasePrice = $ItemList[$i]->PurchasePrice;
-                $Discount = $ItemList[$i]->Discount;
-                $SubTotal = (int)$Qty * (int)$PurchasePrice;
-                $SubTotal = $SubTotal - $Discount;
+            /* Name of shop */
+            $printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
+            $printer->text("Toko Berkat\n");
+            $printer->text("Tani & Ternak\n");
+            $printer->selectPrintMode();
+            $printer->setFont(Printer::FONT_B);
+            $printer->text($addressStore . "\n");
+            $printer->feed();
 
-                $Total = $Total + $SubTotal;
+            // Data transaksi
+            $printer->initialize();
+            $printer->text("Kasir : " . $cashierName . "\n");
+            $printer->text("Waktu : " . $date . "\n");
 
-                $printer->setEmphasis(true);
-                $printer->text($ItemName . "\n");
-                $printer->setEmphasis(false);
-                $printer->text(buatBaris3Kolom($Qty . "x", "@Rp" . number_format($PurchasePrice, 0, ",", "."), "Rp" . number_format($SubTotal, 0, ",", ".")));
+            // Membuat tabel
+            $printer->initialize(); // Reset bentuk/jenis teks
+            $printer->text("--------------------------------\n");
 
-                if ((int)$Discount > 0) {
-                    $printer->setFont(Printer::FONT_B);
-                    $printer->text(buatBaris2Kolom("", "", "Diskon Rp" . number_format($Discount, 0, ",", ".")));
+            $Total = 0;
+
+            if (count($ItemList) > 0) {
+                for ($i = 0; $i < count($ItemList); $i++) {
+                    $ItemCode = $ItemList[$i]->ItemCode;
+                    $ItemName = $ItemList[$i]->ItemName;
+                    $Qty = $ItemList[$i]->Qty;
+                    $PurchasePrice = $ItemList[$i]->PurchasePrice;
+                    $Discount = $ItemList[$i]->Discount;
+                    $SubTotal = (int)$Qty * (int)$PurchasePrice;
+                    $SubTotal = $SubTotal - $Discount;
+
+                    $Total = $Total + $SubTotal;
+
+                    $printer->setEmphasis(true);
+                    $printer->text($ItemName . "\n");
+                    $printer->setEmphasis(false);
+                    $printer->text(buatBaris3Kolom($Qty . "x", "@Rp" . number_format($PurchasePrice, 0, ",", "."), "Rp" . number_format($SubTotal, 0, ",", ".")));
+
+                    if ((int)$Discount > 0) {
+                        $printer->setFont(Printer::FONT_B);
+                        $printer->text(buatBaris2Kolom("", "", "Diskon Rp" . number_format($Discount, 0, ",", ".")));
+                    }
+
+                    $printer->text("\n");
+                    $printer->initialize();
                 }
-
-                $printer->text("\n");
-                $printer->initialize();
             }
+
+            $printer->text("--------------------------------\n");
+            $printer->text(buatBaris3Kolom('', 'Total', "Rp" . number_format($Total, 0, ",", ".")));
+            $printer->feed(3);
+
+            // Pesan penutup
+            $printer->initialize();
+            $printer->setJustification(Printer::JUSTIFY_CENTER);
+            $printer->text("Mohon diperiksa kembali \n");
+            $printer->text("produk yang telah dibeli. \n");
+            $printer->text("Terimakasih telah berbelanja di toko kami.\n");
+
+            $printer->feed(3); // mencetak 5 baris kosong agar terangkat (pemotong kertas saya memiliki jarak 5 baris dari toner)
+            $printer->close();
+
+            $json->success = true;
+            $json->msg = "Struk berhasil dicetak.";
+            $jsonstring = json_encode($json);
+            echo $jsonstring;
+        } else {
+
+            $json->success = true;
+            $json->msg = "Fitur cetak struk di nonaktifkan, tidak ada struk yang di cetak.";
+            $jsonstring = json_encode($json);
+            echo $jsonstring;
         }
-
-        $printer->text("--------------------------------\n");
-        $printer->text(buatBaris3Kolom('', 'Total', "Rp" . number_format($Total, 0, ",", ".")));
-        $printer->feed(3);
-
-        // Pesan penutup
-        $printer->initialize();
-        $printer->setJustification(Printer::JUSTIFY_CENTER);
-        $printer->text("Mohon diperiksa kembali \n");
-        $printer->text("produk yang telah dibeli. \n");
-        $printer->text("Terimakasih telah berbelanja di toko kami.\n");
-
-        $printer->feed(3); // mencetak 5 baris kosong agar terangkat (pemotong kertas saya memiliki jarak 5 baris dari toner)
-        $printer->close();
-
-        $json->success = true;
-        $json->msg = "Struk berhasil dicetak.";
-        $jsonstring = json_encode($json);
-        echo $jsonstring;
     } catch (\Throwable $e) {
         $errorMsg = 'Error on line ' . $e->getLine() . ' in ' . $e->getFile() . ': ' . $e->getMessage();
         saveErrorLog($errorMsg, "Print Reciept", "Print", $userLogin, $conn);
@@ -115,6 +130,9 @@ if (!empty($userLogin)) {
         echo $jsonstring;
     }
 } else {
+    if (strtoupper($isPrintActive) == "TRUE") {
+        $printer->close();
+    }
     $json->success = false;
     $json->msg = "Silahkan login kedalam aplikasi!";
     $jsonstring = json_encode($json);

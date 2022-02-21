@@ -5535,3 +5535,8 @@ span.flatpickr-weekday,
     background-color: #38414a;
     color: #fff;
   }
+
+  .form-check-input.form-check-input-large {
+    width: 1.943em;
+    height: 1.943em;
+  }

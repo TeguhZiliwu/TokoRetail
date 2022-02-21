@@ -23,6 +23,12 @@ const formProp = (isDisabled) => {
     if (settingValue == "SlidePromotionPage") {
       $("#rowSettingValue").css("display", "block");
       $("#SettingValue").css("display", "none");
+    } else if (settingValue == "isPrintActive") {
+      $("#rowSettingValue").css("display", "none");
+      $("#SettingValue").css("display", "block");
+      const checkboxEl = '<div class="row checkbox-input-wrapper"><div class="col-12"><div class="form-check form-check-blue" id="divChangePassword">' + '<input class="form-check-input form-check-input-large" type="checkbox" value="" id="cbbChangePassword">' + "</div></div></div>";
+      $("#txtSettingValue").remove();
+      $("#SettingValue").append(checkboxEl);
     } else {
       $("#rowSettingValue").css("display", "none");
       $("#SettingValue").css("display", "block");
@@ -60,26 +66,29 @@ const validateSubmit = () => {
 
   if (SettingID.val().replace(/\s/g, "") == "SlidePromotionPage") {
     if (pictureTable.rows().count() > 0) {
-        let hasNoPict = 0;
+      let hasNoPict = 0;
 
-        pictureTable.column(1).nodes().to$().each(function (index) {
-            const fileValue = $(this).find("input[type='file']").val();
-            const itempictureid = pictureTable.row($(this).parents('tr')).data().PictureName;
-            if (fileValue == "" && itempictureid == "") {
-                hasNoPict++;
-                $(this).find("input[type='file']").siblings("input.custom-file-group-table").addClass("is-invalid");
-            }
+      pictureTable
+        .column(1)
+        .nodes()
+        .to$()
+        .each(function (index) {
+          const fileValue = $(this).find("input[type='file']").val();
+          const itempictureid = pictureTable.row($(this).parents("tr")).data().PictureName;
+          if (fileValue == "" && itempictureid == "") {
+            hasNoPict++;
+            $(this).find("input[type='file']").siblings("input.custom-file-group-table").addClass("is-invalid");
+          }
         });
 
-        if (hasNoPict > 0) {
-            valid = false;
-        }
-    } else {
+      if (hasNoPict > 0) {
         valid = false;
-        validateDesc = "Silahkan pilih minimal 1 foto.";
-    }      
+      }
+    } else {
+      valid = false;
+      validateDesc = "Silahkan pilih minimal 1 foto.";
+    }
   } else {
-
     if (SettingValue.val().replace(/\s/g, "") == "" || SettingValue.val().length > 2000) {
       valid = false;
       SettingValue.addClass("is-invalid");
@@ -96,12 +105,18 @@ const validateSubmit = () => {
 // Start click function
 
 $("#btnAdd").click(async function () {
+  edit = false;
   $('a[href="#tabs-detail"]').tab("show");
   formProp(false);
 });
 
 $("#btnCancel").click(async function () {
-  $('a[href="#tabs-data"]').tab("show");
+  $('a[href="#tabs-data"]').tab("show");  
+  $(".checkbox-input-wrapper, #txtSettingValue").remove();
+  const inputEl = '<input type="text" class="form-control maintenance-form" id="txtSettingValue" placeholder="Masukkan Setting Value" autocomplete="off" maxlength="2000">';
+  $("#SettingValue").append(inputEl);
+  $("#rowSettingValue").css("display", "none");
+  $("#SettingValue").css("display", "block");  
   formProp(true);
   clearForm();
 });
@@ -692,11 +707,13 @@ const getPicture = async () => {
     const param = {
       FetchData: "getGlobalValue",
       SettingID: "SlidePromotionPage",
+      isPromotionPage: "false",
     };
 
     showLoading();
     pictureTable.clear().draw();
     const response = await callAPI(url, "GET", param);
+    console.log(response);
 
     if (response.success) {
       const data = response.data[0].SettingValue.split("|");
