@@ -52,10 +52,27 @@ if (!empty($userLogin)) {
 				$stmt->execute();
 			}
 		} else {
-			$query = ("UPDATE titem SET itemdesc=?, categorycode=?, uomcode=?, itemtype=?, sellingprice=?, updatedby=?, updateddate=CURRENT_TIMESTAMP WHERE itemcode=?");
+
+			$query = ("SELECT itemcode FROM titem WHERE itemname = ? AND categorycode = ? AND uomcode = ? AND itemtype = ? AND itemcode != ?");
 			$stmt = $conn->prepare($query);
-			$stmt->bind_param("sssssss", $ItemDesc, $Category, $UOM, $ItemType, $SellingPrice, $userLogin, $ItemCode);
+			$stmt->bind_param("sssss", $ItemName, $Category, $UOM, $ItemType, $ItemCode);
 			$stmt->execute();
+			$result = $stmt->get_result();
+
+			if ($result->num_rows > 0) {
+				$json->success = false;
+				$json->msg = "Barang sudah terdaftar.";
+				$jsonstring = json_encode($json);
+				echo $jsonstring;
+				$stmt->close();
+				closeConn($conn);
+				exit();
+			} else {
+				$query = ("UPDATE titem SET itemname=?, itemdesc=?, categorycode=?, uomcode=?, itemtype=?, sellingprice=?, updatedby=?, updateddate=CURRENT_TIMESTAMP WHERE itemcode=?");
+				$stmt = $conn->prepare($query);
+				$stmt->bind_param("ssssssss", $ItemName, $ItemDesc, $Category, $UOM, $ItemType, $SellingPrice, $userLogin, $ItemCode);
+				$stmt->execute();
+			}
 		}
 
 		if ($stmt->affected_rows > 0) {

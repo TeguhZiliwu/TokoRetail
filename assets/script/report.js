@@ -232,8 +232,12 @@ const mainTable = $("#tblMainData").DataTable({
             render: function (value) {
                 if (value === "IN") {
                     return "Stok Masuk";
-                } else {
+                } else if (value === "OUT") {
                     return "Penjualan";
+                } else if (value === "RETUR"){
+                    return "Barang Retur";
+                } else {
+                    return "";
                 }
             },
             className: "align-middle",

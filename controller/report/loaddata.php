@@ -88,7 +88,7 @@ if (!empty($userLogin)) {
         $stmt->close();
     } catch (\Throwable $e) {
         $errorMsg = 'Error on line ' . $e->getLine() . ' in ' . $e->getFile() . ': ' . $e->getMessage();
-        saveErrorLog($errorMsg, "Item", "Load Data", $userLogin, $conn);
+        saveErrorLog($errorMsg, "Report", "Load Data", $userLogin, $conn);
         $json->success = false;
         $json->msg = "[ERROR] Terjadi kesalahan, harap hubungi teknisi.";
         $jsonstring = json_encode($json);

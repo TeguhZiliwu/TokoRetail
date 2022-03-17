@@ -159,7 +159,7 @@ if (!empty($userLogin)) {
         }
     } catch (\Throwable $e) {
         $errorMsg = 'Error on line ' . $e->getLine() . ' in ' . $e->getFile() . ': ' . $e->getMessage();
-        saveErrorLog($errorMsg, "Item", "Fetch Data", $userLogin, $conn);
+        saveErrorLog($errorMsg, "Dashboard", "Fetch Data", $userLogin, $conn);
         $json->success = false;
         $json->msg = "[ERROR] Terjadi kesalahan, harap hubungi teknisi.";
         $jsonstring = json_encode($json);

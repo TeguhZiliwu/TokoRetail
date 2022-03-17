@@ -299,7 +299,7 @@ const saveData = async () => {
       FormType: FormType,
       edit: edit === true ? "true" : "false",
     };
-    console.log(param)
+	
     showLoading();
     const response = await callAPI(url, "POST", param);
 

@@ -64,7 +64,7 @@
 
                             <div class="mb-3">
                                 <label for="txtUserID" class="form-label">User ID</label>
-                                <input class="form-control" type="text" id="txtUserID" placeholder="Masukkan User ID">
+                                <input class="form-control" type="text" id="txtUserID" placeholder="Masukkan User ID" autocomplete="off">
                             </div>
 
                             <div class="mb-3">

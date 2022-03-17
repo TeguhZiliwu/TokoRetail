@@ -26,6 +26,7 @@ if (!empty($userLogin)) {
         $stmt->bind_param("s", $ItemCode);
         $stmt->execute();
         $result = $stmt->get_result();
+        $stockItem = 0;
 
         if ($result->num_rows > 0) {
             $Stock = 0;
@@ -34,19 +35,40 @@ if (!empty($userLogin)) {
             }
             if ($Stock > 0) {
                 $json->success = false;
-                $json->msg = "Barang ini masih memiliki stock, tidak bisa dihapus!";
+                $json->msg = "Barang ini masih memiliki stock, tidak dapat dihapus!";
                 $jsonstring = json_encode($json);
                 echo $jsonstring;
                 $stmt->close();
                 closeConn($conn);
                 exit();
+            } else {
+                $stockItem = $Stock;
             }
-        } else {
-            $query = "DELETE FROM titem WHERE itemcode=?";
+        }
+
+        if ($stockItem == 0) {
+
+            $query = ("SELECT itemcode FROM ttransactiondet WHERE itemcode = ?");
             $stmt = $conn->prepare($query);
             $stmt->bind_param("s", $ItemCode);
             $stmt->execute();
             $result = $stmt->get_result();
+
+            if ($result->num_rows > 0) {
+                $json->success = false;
+                $json->msg = "Barang ini sudah di transaksikan, tidak dapat dihapus!";
+                $jsonstring = json_encode($json);
+                echo $jsonstring;
+                $stmt->close();
+                closeConn($conn);
+                exit();
+            } else {
+                $query = "DELETE FROM titem WHERE itemcode=?";
+                $stmt = $conn->prepare($query);
+                $stmt->bind_param("s", $ItemCode);
+                $stmt->execute();
+                $result = $stmt->get_result();
+            }
         }
 
         if ($stmt->affected_rows > 0) {

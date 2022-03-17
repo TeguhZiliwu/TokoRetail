@@ -89,9 +89,11 @@ if (!empty($userLogin)) {
                                         if ($resultvalidata[0]["fixdiskon"] != "") {
                                             $Diskon = $resultvalidata[0]["fixdiskon"];
                                         }
-                                        $query = ("INSERT INTO ttransactiondet (transactionid, itemcode, qty, purchaseprice, discount) VALUES (?,?,?,?,?)");
+                                        $intialPrice = getInitialPrice($conn, $KodeBarang);
+
+                                        $query = ("INSERT INTO ttransactiondet (transactionid, itemcode, qty, initialprice, purchaseprice, discount) VALUES (?,?,?,?,?,?)");
                                         $stmt = $conn->prepare($query);
-                                        $stmt->bind_param("sssss", $TransactionID, $KodeBarang, $Jumlah, $SellingPrice, $Diskon);
+                                        $stmt->bind_param("ssssss", $TransactionID, $KodeBarang, $Jumlah, $intialPrice, $SellingPrice, $Diskon);
                                         if (!$stmt->execute()) {
                                             $successInsertDet = false;
                                             throw new Exception($stmt->error);
@@ -509,4 +511,25 @@ function getPurchasePrice($conn, $ItemCode)
     }
 
     return $SellingPrice;
+}
+
+function getInitialPrice($conn, $itemid){
+    $return = "";
+    $query = "(SELECT itemcode, itemname, sellingprice, IFNULL((SELECT A.purchaseprice FROM ttransactiondet A INNER JOIN ttransaction B ON A.transactionid = B.transactionid WHERE B.transactiontype = 'IN' AND A.itemcode = C.itemcode ORDER BY B.transactiondate DESC LIMIT 1), 0) AS buyprice, (sellingprice - IFNULL((SELECT A.purchaseprice FROM ttransactiondet A INNER JOIN ttransaction B ON A.transactionid = B.transactionid WHERE B.transactiontype = 'IN' AND A.itemcode = C.itemcode ORDER BY B.transactiondate DESC LIMIT 1), 0)) AS gainloss
+    FROM titem C
+    WHERE itemcode LIKE ?
+    ORDER BY itemcode ASC)";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("s", $itemid);
+    if (!$stmt->execute()) {
+        echo $stmt->error;
+        throw new Exception($stmt->error);
+    }
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0) {
+        while ($data = $result->fetch_assoc()) {
+            $return = $data['buyprice'];
+        }
+    }
+    return $return;
 }

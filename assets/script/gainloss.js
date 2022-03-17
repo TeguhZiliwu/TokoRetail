@@ -7,95 +7,75 @@ $(document).ready(async function () {
     $(".dt-buttons").css("display", "none");
     await loadData();
     await getFormName(currentFormID);
-    formProp(true);
+
+    const DateNow = new Date();
+    const todayDate = DateNow.getFullYear() + "-" + ("0" + (DateNow.getMonth() + 1)).slice(-2) + "-" + ("0" + DateNow.getDate()).slice(-2);
+    setDatetimepicker($("#txtFromDate"), "DAILY", todayDate);
+    setDatetimepicker($("#txtToDate"), "DAILY", todayDate, todayDate);
+    $("#txtFromDate").on("dp.change", function () {
+      const fromDate = $(this).val();
+      const toDate = $("#txtToDate").val();
+      const period = $("#ddPeriod").val();
+
+      if (fromDate != "" && toDate != "") {
+        let fixToDate = toDate.split("-");
+        let fixFromDate = fromDate.split("-");
+
+        if (period === "Daily") {
+          fixFromDate = fixFromDate[2] + "-" + fixFromDate[1] + "-" + fixFromDate[0] + " 24:00:00";
+          fixToDate = fixToDate[2] + "-" + fixToDate[1] + "-" + fixToDate[0];
+          const minDate = new Date(fixFromDate);
+          const defToDate = new Date(fixToDate);
+          $("#txtToDate").datetimepicker("destroy").val("");
+          if (stringToDate(fromDate, "dd-mm-yyyy", "-") > stringToDate(toDate, "dd-mm-yyyy", "-")) {
+            setDatetimepicker($("#txtToDate"), "Daily", minDate, minDate);
+          } else {
+            setDatetimepicker($("#txtToDate"), "Daily", defToDate, minDate);
+          }
+        } else if (period === "Monthly") {
+          fixFromDate = fixFromDate[1] + "-" + fixFromDate[0] + "-01 24:00:00";
+          fixToDate = fixToDate[1] + "-" + fixToDate[0] + "-01 00:00:00";
+          const minDate = new Date(fixFromDate);
+          const defToDate = new Date(fixToDate);
+          $("#txtToDate").datetimepicker("destroy").val("");
+          if (stringToDate(fromDate, "mm-yyyy", "-", "Monthly") > stringToDate(toDate, "mm-yyyy", "-", "Monthly")) {
+            setDatetimepicker($("#txtToDate"), "Monthly", minDate, minDate);
+          } else {
+            setDatetimepicker($("#txtToDate"), "Monthly", defToDate, minDate);
+          }
+        } else if (period === "Yearly") {
+          const minDate = new Date(fixFromDate);
+          const defToDate = new Date(fixToDate);
+          $("#txtToDate").datetimepicker("destroy").val("");
+          if (stringToDate(fromDate, "yyyy", "-", "Yearly") > stringToDate(toDate, "yyyy", "-", "Yearly")) {
+            setDatetimepicker($("#txtToDate"), "Yearly", minDate, minDate);
+          } else {
+            setDatetimepicker($("#txtToDate"), "Yearly", defToDate, minDate);
+          }
+        }
+      }
+    });
   } else {
     window.location.replace("../errorpage/403");
   }
 });
 
-const formProp = (isDisabled) => {
-  $(".maintenance-form, #btnSave, #btnCancel").prop("disabled", isDisabled);
-  $("#btnAdd, button[name='editaction'], button[name='deleteaction']").prop("disabled", !isDisabled);
-};
-
-const disabledForm = async () => {
-  formProp(true);
-};
-
-const enabledForm = async () => {
-  formProp(false);
-};
-
-const clearForm = () => {
-  $(".maintenance-form").val("").trigger("change");
-  $("#txtGroupID, #txtGroupDescription").removeClass("is-invalid");
-};
-
-const validateSubmit = () => {
-  let valid = true;
-  const validateTitle = "Data tidak valid!";
-  const validateDesc = "Silahkan lengkapi data dengan benar!";
-  const GroupID = $("#txtGroupID");
-  const GroupDesc = $("#txtGroupDescription");
-
-  if (GroupID.val().replace(/\s/g, "") == "" || GroupID.val().length > 20) {
-    valid = false;
-    GroupID.addClass("is-invalid");
-  }
-
-  if (GroupDesc.val().replace(/\s/g, "") == "" || GroupDesc.val().length > 100) {
-    valid = false;
-    GroupDesc.addClass("is-invalid");
-  }
-
-  if (!valid) {
-    showNotif(validateDesc, 15000, "warning", "top-end");
-  }
-
-  return valid;
-};
-
 // Start click function
-
-$("#btnAdd").click(async function () {
-  $('a[href="#tabs-detail"]').tab("show");
-  formProp(false);
-});
-
-$("#btnCancel").click(async function () {
-  $('a[href="#tabs-data"]').tab("show");
-  formProp(true);
-  clearForm();
-});
-
-$("#btnSave").click(async function () {
-  if (validateSubmit()) {
-    await saveData();
-  }
-});
 
 $("#btnSearch").click(async function (e) {
   await loadData();
 });
 
-$("#tblMainData").on("click", 'button[name="editaction"]', function () {
-  edit = true;
-  const rowData = mainTable.row($(this).parents("tr")).data();
-  $("#txtGroupID").val(rowData.GroupID);
-  $("#txtGroupDescription").val(rowData.GroupDesc);
-
-  enabledForm();
-  $('a[href="#tabs-detail"]').tab("show");
-  $("#txtGroupID").prop("disabled", true);
+$("#btnShowProfitAndLoss").click(async function (e) {
+  await loadDataProfitAndLoss();
 });
 
-$("#tblMainData").on("click", 'button[name="deleteaction"]', function () {
-  const rowData = mainTable.row($(this).parents("tr")).data();
-  confirmDelete(rowData.GroupID);
+$("li.nav-item").click(function () {
+  $($.fn.dataTable.tables(true)).DataTable().columns.adjust();
 });
 
-$("#btnExport").click(function () {
-  $("#mainTableExportExcel").click();
+$("#btnExportProfitLoss").click(function (e) {
+  exportProfitLoss();
 });
 
 // End click function
@@ -111,18 +91,47 @@ $("#txtSearch").keypress(function (e) {
 // End keypress function
 
 // Start change function
-$("#txtGroupID").change(function () {
-  if ($(this).val().replace(/\s/g, "") != "" && $(this).val().length != 0 && $(this).val().length <= 20) {
-    $(this).removeClass("is-invalid");
+
+$("#ddPeriod").change(function () {
+  const period = $(this).val();
+  const DateNow = new Date();
+  let todayDate = DateNow.getFullYear() + "-" + ("0" + (DateNow.getMonth() + 1)).slice(-2) + "-" + ("0" + DateNow.getDate()).slice(-2);
+
+  $("#txtFromDate, #txtToDate").datetimepicker("destroy").val("");
+  if (period === "Daily") {
+    setDatetimepicker($("#txtFromDate"), "Daily", todayDate);
+    setDatetimepicker($("#txtToDate"), "Daily", todayDate, todayDate);
+  } else if (period === "Monthly") {
+    todayDate = todayDate.split("-");
+    const minDate = todayDate[0] + "-" + todayDate[1] + "-01 24:00:00";
+    const defDate = todayDate[0] + "-" + todayDate[1] + "-01 00:00:00";
+
+    setDatetimepicker($("#txtFromDate"), "Monthly", defDate);
+    setDatetimepicker($("#txtToDate"), "Monthly", defDate, minDate);
+  } else if (period === "Yearly") {
+    todayDate = todayDate.split("-");
+    const minDate = todayDate[0] + "-" + "01" + "-01 24:00:00";
+    const defDate = todayDate[0] + "-" + "01" + "-01 00:00:00";
+
+    setDatetimepicker($("#txtFromDate"), "Yearly", defDate);
+    setDatetimepicker($("#txtToDate"), "Yearly", defDate, minDate);
   }
 });
 
-$("#txtGroupDescription").change(function () {
-  if ($(this).val().replace(/\s/g, "") != "" && $(this).val().length != 0 && $(this).val().length <= 100) {
-    $(this).removeClass("is-invalid");
-  }
-});
 // End change function
+
+// Start initialize element
+
+$("#ddPeriod").select2({
+  placeholder: "Pilih Periode",
+  //   allowClear: true
+});
+
+$("#txtFromDate, #txtToDate").on("keydown", function (e) {
+  preventInput(e);
+});
+
+// End initialize element
 
 const mainTable = $("#tblMainData").DataTable({
   columns: [
@@ -304,27 +313,46 @@ const loadData = async () => {
   }
 };
 
-const saveData = async () => {
+const loadDataProfitAndLoss = async () => {
   try {
-    const url = "../controller/group/create_update.php";
-    const GroupID = $("#txtGroupID").val();
-    const GroupDesc = $("#txtGroupDescription").val();
+    let FromDate = $("#txtFromDate").val();
+    let ToDate = $("#txtToDate").val();
+    const Period = $("#ddPeriod").val();
+
+    if (Period === "Daily") {
+      FromDate = FromDate.split("-");
+      FromDate = FromDate[2] + "-" + FromDate[1] + "-" + FromDate[0] + " 00:00:00";
+
+      ToDate = ToDate.split("-");
+      ToDate = ToDate[2] + "-" + ToDate[1] + "-" + ToDate[0] + " 23:59:59";
+    } else if (Period === "Monthly") {
+      FromDate = FromDate.split("-");
+      FromDate = FromDate[1] + "-" + FromDate[0] + "-01" + " 00:00:00";
+
+      ToDate = ToDate.split("-");
+      ToDate = ToDate[1] + "-" + ToDate[0] + "-31" + " 23:59:59";
+    } else if (Period === "Yearly") {
+      FromDate = FromDate + "-01" + "-01" + " 00:00:00";
+      ToDate = ToDate + "-12" + "-31" + " 23:59:59";
+    }
+
+    const url = "../controller/gainloss/fetch_profit_loss.php";
     const param = {
-      GroupID: GroupID,
-      GroupDesc: GroupDesc,
-      edit: edit === true ? "true" : "false",
+      FromDate: FromDate,
+      ToDate: ToDate,
     };
 
     showLoading();
-    const response = await callAPI(url, "POST", param);
+    const response = await callAPI(url, "GET", param);
 
     if (response.success) {
-      showNotif(response.msg, 15000, "success", "top-end");
-      await loadData();
-      disabledForm();
-      clearForm();
-      $('a[href="#tabs-data"]').tab("show");
-      $($.fn.dataTable.tables(true)).DataTable().columns.adjust();
+      const data = await response.data;
+
+      $("#lblTotalIn").text(convertIntToRp(data[0].TotalIn));
+      $("#lblTotalOut").text(convertIntToRp(data[0].TotalOut));
+      $("#lblTotalProfit").text(data[0].TotalProfit < 0 ? "-" + convertIntToRp(data[0].TotalProfit) : convertIntToRp(data[0].TotalProfit));
+      $("#lblPeriode").text(`Periode : ${$("#txtFromDate").val()} s/d ${$("#txtToDate").val()}`);
+      hideLoading();
     } else {
       if (response.msg.includes("[ERROR]")) {
         response.msg = response.msg.replace("[ERROR] ", "");
@@ -339,62 +367,92 @@ const saveData = async () => {
   }
 };
 
-const confirmDelete = (groupid) => {
-  const swalWithBootstrapButtons = Swal.mixin({
-    customClass: {
-      confirmButton: "btn btn-success me-2",
-      cancelButton: "btn btn-danger",
+const preventInput = (evnt) => {
+  if (evnt.which != 9) evnt.preventDefault();
+};
+
+const setDatetimepicker = (el, period, defaultdate, mindate = false) => {
+  const defDate = new Date(defaultdate);
+  let format = "DD-MM-YYYY";
+  let viewMode = "days";
+
+  if (period == "Monthly") {
+    format = "MM-YYYY";
+    viewMode = "months";
+  } else if (period == "Yearly") {
+    format = "YYYY";
+    viewMode = "years";
+  }
+
+  if (mindate != false) {
+    mindate = new Date(mindate);
+
+    if (period == "Daily") {
+      mindate.setDate(mindate.getDate() - 1);
+    } else if (period == "Monthly") {
+      mindate.setDate(mindate.getDate() - 1);
+    } else if (period == "Yearly") {
+      mindate.setDate(mindate.getDate() - 1);
+    }
+  }
+
+  $(el).datetimepicker({
+    format: format,
+    viewMode: viewMode,
+    showTodayButton: true,
+    defaultDate: defDate,
+    minDate: mindate,
+    widgetPositioning: {
+      horizontal: "left",
+      vertical: "bottom",
     },
-    buttonsStyling: false,
+    icons: {
+      time: "fas fa-clock-o",
+      date: "fas fa-calendar",
+      up: "fas fa-arrow-up",
+      down: "fas fa-arrow-down",
+      today: "fas fa-map-marker",
+      previous: "fas fa-angle-left",
+      next: "fas fa-angle-right",
+    },
   });
-
-  swalWithBootstrapButtons
-    .fire({
-      title: "Hapus Data",
-      text: "Apakah anda yakin ingin menghapus data ini?",
-      icon: "question",
-      showCancelButton: true,
-      buttonsStyling: false,
-      confirmButtonText: "Ya",
-      cancelButtonText: "Tidak",
-      allowOutsideClick: false,
-    })
-    .then((result) => {
-      if (result.isConfirmed) {
-        deleteData(groupid);
-      } else {
-        setTimeout(function () {
-          $($.fn.dataTable.tables(true)).DataTable().columns.adjust();
-        }, 400);
-      }
-    });
-  $($.fn.dataTable.tables(true)).DataTable().columns.adjust();
 };
 
-const deleteData = async (groupid) => {
-  try {
-    const url = "../controller/group/delete.php";
-    const param = {
-      GroupID: groupid,
-    };
+const stringToDate = (_date, _format, _delimiter, _period = "Daily") => {
+  const formatLowerCase = _format.toLowerCase();
+  const formatItems = formatLowerCase.split(_delimiter);
+  const dateItems = _date.split(_delimiter);
+  const monthIndex = formatItems.indexOf("mm");
+  const dayIndex = formatItems.indexOf("dd");
+  const yearIndex = formatItems.indexOf("yyyy");
+  let month = parseInt(dateItems[monthIndex]);
+  month -= 1;
 
-    showLoading();
-    const response = await callAPI(url, "POST", param);
-
-    if (response.success) {
-      showNotif(response.msg, 15000, "success", "top-end");
-      await loadData();
-    } else {
-      if (response.msg.includes("[ERROR]")) {
-        response.msg = response.msg.replace("[ERROR] ", "");
-        showNotif(response.msg, 15000, "error", "top-end");
-      } else {
-        showNotif(response.msg, 15000, "warning", "top-end");
-      }
-      hideLoading();
-    }
-    clearForm();
-  } catch (error) {
-    showNotif(error, 15000, "error", "top-end");
+  if (_period === "Monthly") {
+    const formatedDate = new Date(dateItems[yearIndex], month);
+    return formatedDate;
+  } else if (_period === "Yearly") {
+    const formatedDate = new Date(dateItems[yearIndex]);
+    return formatedDate;
+  } else {
+    const formatedDate = new Date(dateItems[yearIndex], month, dateItems[dayIndex]);
+    return formatedDate;
   }
 };
+
+const convertIntToRp = (data) => {
+  const format = data.toString().split("").reverse().join("");
+  const convert = format.match(/\d{1,3}/g);
+  const fixAmount = convert.join(".").split("").reverse().join("");
+
+  return "Rp " + fixAmount;
+};
+
+const exportProfitLoss = () => {
+  TableToExcel.convert(document.getElementById("tblProfitAndLoss"), { 
+    name: `ProfitLoss.xlsx`,
+    sheet: {
+      name: 'Sheet 1'
+    }
+  });
+}

@@ -26,6 +26,7 @@ include "../components/topapp.php";
                                 <select class="form-control maintenance-form" data-toggle="select2" data-width="100%" id="ddReportType">
                                     <option value="OUT" selected>Penjualan</option>
                                     <option value="IN">Stok Masuk</option>
+                                    <option value="RETUR">Barang Retur</option>
                                 </select>
                             </div>
                         </div>

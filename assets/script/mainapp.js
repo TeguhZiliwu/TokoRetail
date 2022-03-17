@@ -110,7 +110,7 @@ const callAPI = async (url, method, params = {}, uploadfile = false) => {
       return result.json();
     }
 
-    throw await response.text();
+    throw await result.text();
   } catch (error) {
     throw error;
   }

@@ -116,6 +116,12 @@ include "../components/footer.php";
 
 <script src="../assets/js/customCounterUp.js"></script>
 
+<script src="../assets/js/JavaScript-JSON-Data-Excel-XLSX/jhxlsx.lib.js"></script>
+<script src="../assets/js/JavaScript-JSON-Data-Excel-XLSX/jszip.min.js"></script>
+<script src="../assets/js/JavaScript-JSON-Data-Excel-XLSX/tableToExcel.js"></script>
+<script src="../assets/libs/bootstrap-touchspin/jquery.bootstrap-touchspin.min.js"></script>
+<script src="../assets/libs/bootstrap-maxlength/bootstrap-maxlength.min.js"></script>
+
 <!-- App js-->
 <script src="../assets/js/app.js"></script>
 <script src="../assets/script/mainapp.js"></script>

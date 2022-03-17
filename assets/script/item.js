@@ -131,8 +131,9 @@ $("#ddItemType").select2({
 
 const sellingPriceAutoNum = new AutoNumeric('#txtSellingPrice', {
     decimalPlaces: 0,
-    digitGroupSeparator: '',
-    modifyValueOnWheel: false
+    decimalCharacter: ",",
+    digitGroupSeparator: ".",
+    modifyValueOnWheel: false,
 });
 const tooltipTemplate = tippy("#btnTemplate", {
     arrow: true,
@@ -181,7 +182,7 @@ $("#tblMainData").on("click", 'button[name="editaction"]', async function () {
 
     enabledForm();
     $('a[href="#tabs-detail"]').tab("show");
-    $("#txtItemName, #ddCategory, #ddUOM, #ddItemType").prop("disabled", true);
+    // $("#txtItemName, #ddCategory, #ddUOM, #ddItemType").prop("disabled", true);
     $($.fn.dataTable.tables(true)).DataTable().columns.adjust();
 });
 
@@ -649,7 +650,7 @@ const saveData = async () => {
             Category: Category,
             UOM: UOM,
             ItemType: ItemType,
-            SellingPrice: SellingPrice,
+            SellingPrice: SellingPrice.replace(/\D/g, ""),
             edit: edit === true ? "true" : "false",
         };
 

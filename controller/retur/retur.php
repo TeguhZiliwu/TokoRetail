@@ -21,6 +21,7 @@ if (!empty($userLogin)) {
 
     try {
         $Remark = mysqli_real_escape_string($conn, $postdata->Remark);
+        $RelatedTransactionID = mysqli_real_escape_string($conn, $postdata->TransactionID);
         $ItemList = $postdata->ItemList;
 
         if (count($ItemList) > 0) {
@@ -30,10 +31,10 @@ if (!empty($userLogin)) {
             $conn->begin_transaction();
 
             $TransactionID = generatedTransactionID($conn);
-            $TransactionType = "OUT";
-            $query = ("INSERT INTO ttransaction (transactionid, transactiontype, transactiondate, remark, createdby, createddate) VALUES (?,?,CURRENT_TIMESTAMP,?,?,CURRENT_TIMESTAMP)");
+            $TransactionType = "RETUR";
+            $query = ("INSERT INTO ttransaction (transactionid, transactiontype, relatedtransaction, transactiondate, remark, createdby, createddate) VALUES (?,?,CURRENT_TIMESTAMP,?,?,CURRENT_TIMESTAMP)");
             $stmt = $conn->prepare($query);
-            $stmt->bind_param("ssss", $TransactionID, $TransactionType, $Remark, $userLogin);
+            $stmt->bind_param("sssss", $TransactionID, $TransactionType, $RelatedTransactionID, $Remark, $userLogin);
             if (!$stmt->execute()) {
                 echo $stmt->error;
                 throw new Exception($stmt->error);
@@ -63,7 +64,7 @@ if (!empty($userLogin)) {
 
                     $Qty = (int)$Qty;
                     $existingQty = (int)$existingQty;
-                    $FixedQty = ($existingQty - $Qty);
+                    $FixedQty = ($existingQty + $Qty);
 
                     $query = ("UPDATE tstock SET qty=?, updatedby=?, updateddate=CURRENT_TIMESTAMP WHERE itemcode=?");
                     $stmt = $conn->prepare($query);
@@ -71,22 +72,39 @@ if (!empty($userLogin)) {
                     if (!$stmt->execute()) {
                         throw new Exception($stmt->error);
                     }
-                } else {
-                    $conn->rollback();
-                    saveErrorLog("Stock untuk Kode Barang ".$ItemCode." tidak tersedia.", "Sale", "Sale", $userLogin, $conn);
-                    $json->success = false;
-                    $json->msg = "[ERROR] Terjadi kesalahan, harap hubungi teknisi.";
-                    $jsonstring = json_encode($json);
-                    echo $jsonstring;
-                    $stmt->close();
-                    closeConn($conn);
-                    exit();
                 }
 
-                $intialPrice = getInitialPrice($conn, $ItemCode);
-                $query = ("INSERT INTO ttransactiondet (transactionid, itemcode, qty, initialprice, purchaseprice, discount) VALUES (?,?,?,?,?,?)");
+                $query = ("SELECT itemcode, qty FROM ttransactiondet WHERE itemcode = ? AND transactionid = ?");
                 $stmt = $conn->prepare($query);
-                $stmt->bind_param("ssssss", $TransactionID, $ItemCode, $Qty, $intialPrice, $PurchasePrice, $Discount);
+                $stmt->bind_param("ss", $ItemCode, $RelatedTransactionID);
+                if (!$stmt->execute()) {
+                    echo $stmt->error;
+                    throw new Exception($stmt->error);
+                }
+                $result = $stmt->get_result();
+                
+                if ($result->num_rows > 0) {
+                    $existingQty = 0;
+
+                    while ($data = $result->fetch_assoc()) {
+                        $existingQty = $data['qty'];
+                    }
+
+                    $Qty = (int)$Qty;
+                    $existingQty = (int)$existingQty;
+                    $FixedQty = ($existingQty - $Qty);
+
+                    $query = ("UPDATE ttransactiondet SET qty=? WHERE itemcode=? AND transactionid = ?");
+                    $stmt = $conn->prepare($query);
+                    $stmt->bind_param("sss", $FixedQty, $ItemCode, $RelatedTransactionID);
+                    if (!$stmt->execute()) {
+                        throw new Exception($stmt->error);
+                    }
+                }
+
+                $query = ("INSERT INTO ttransactiondet (transactionid, itemcode, qty, purchaseprice, discount) VALUES (?,?,?,?,?)");
+                $stmt = $conn->prepare($query);
+                $stmt->bind_param("sssss", $TransactionID, $ItemCode, $Qty, $PurchasePrice, $Discount);
                 if (!$stmt->execute()) {
                     throw new Exception($stmt->error);
                 }
@@ -95,7 +113,7 @@ if (!empty($userLogin)) {
             if ($conn->commit()) {
                 $stmt->close();
                 $json->success = true;
-                $json->msg = "Penjualan berhasil dicatat.";
+                $json->msg = "Retur barang berhasil dicatat.";
                 $jsonstring = json_encode($json);
                 echo $jsonstring;
             } else {
@@ -105,7 +123,7 @@ if (!empty($userLogin)) {
     } catch (\Throwable $e) {
         $conn->rollback();
         $errorMsg = 'Error on line ' . $e->getLine() . ' in ' . $e->getFile() . ': ' . $e->getMessage();
-        saveErrorLog($errorMsg, "Sale", "Sale", $userLogin, $conn);
+        saveErrorLog($errorMsg, "Retur", "Retur", $userLogin, $conn);
         $json->success = false;
         $json->msg = "[ERROR] Terjadi kesalahan, harap hubungi teknisi.";
         $jsonstring = json_encode($json);
@@ -124,32 +142,11 @@ if (!empty($userLogin)) {
 function generatedTransactionID($conn)
 {
     $return = "";
-    $query = ("SELECT CASE WHEN EXISTS (SELECT transactionid FROM ttransaction WHERE transactionid LIKE CONCAT('TROUT',YEAR(NOW()),LPAD(MONTH(NOW()), 2, '0'),'%')) THEN CONCAT('TROUT', YEAR(NOW()),LPAD(MONTH(NOW()), 2, '0'),RIGHT(CONCAT('0000',CAST((CAST((SELECT RIGHT(transactionid,4) FROM ttransaction WHERE transactionid LIKE CONCAT('TROUT',YEAR(NOW()),LPAD(MONTH(NOW()), 2, '0'),'%') ORDER BY transactionid DESC LIMIT 1) as int) + 1) as varchar(20))), 4)) ELSE CONCAT('TROUT',YEAR(NOW()),LPAD(MONTH(NOW()), 2, '0'),'0001') END AS ID;");
+    $query = ("SELECT CASE WHEN EXISTS (SELECT transactionid FROM ttransaction WHERE transactionid LIKE CONCAT('RETRN',YEAR(NOW()),LPAD(MONTH(NOW()), 2, '0'),'%')) THEN CONCAT('RETRN', YEAR(NOW()),LPAD(MONTH(NOW()), 2, '0'),RIGHT(CONCAT('0000',CAST((CAST((SELECT RIGHT(transactionid,4) FROM ttransaction WHERE transactionid LIKE CONCAT('RETRN',YEAR(NOW()),LPAD(MONTH(NOW()), 2, '0'),'%') ORDER BY transactionid DESC LIMIT 1) as int) + 1) as varchar(20))), 4)) ELSE CONCAT('RETRN',YEAR(NOW()),LPAD(MONTH(NOW()), 2, '0'),'0001') END AS ID;");
     $id = mysqli_query($conn, $query);
     if (mysqli_num_rows($id) > 0) {
         while ($rows = mysqli_fetch_array($id)) {
             $return = $rows['ID'];
-        }
-    }
-    return $return;
-}
-
-function getInitialPrice($conn, $itemid){
-    $return = "";
-    $query = "(SELECT itemcode, itemname, sellingprice, IFNULL((SELECT A.purchaseprice FROM ttransactiondet A INNER JOIN ttransaction B ON A.transactionid = B.transactionid WHERE B.transactiontype = 'IN' AND A.itemcode = C.itemcode ORDER BY B.transactiondate DESC LIMIT 1), 0) AS buyprice, (sellingprice - IFNULL((SELECT A.purchaseprice FROM ttransactiondet A INNER JOIN ttransaction B ON A.transactionid = B.transactionid WHERE B.transactiontype = 'IN' AND A.itemcode = C.itemcode ORDER BY B.transactiondate DESC LIMIT 1), 0)) AS gainloss
-    FROM titem C
-    WHERE itemcode LIKE ?
-    ORDER BY itemcode ASC)";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("s", $itemid);
-    if (!$stmt->execute()) {
-        echo $stmt->error;
-        throw new Exception($stmt->error);
-    }
-    $result = $stmt->get_result();
-    if ($result->num_rows > 0) {
-        while ($data = $result->fetch_assoc()) {
-            $return = $data['buyprice'];
         }
     }
     return $return;

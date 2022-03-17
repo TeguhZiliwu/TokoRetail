@@ -5540,3 +5540,7 @@ span.flatpickr-weekday,
     width: 1.943em;
     height: 1.943em;
   }
+
+  td.table-profit {
+    min-width: 150px;
+  }
