@@ -32,7 +32,7 @@ if (!empty($userLogin)) {
 
             $TransactionID = generatedTransactionID($conn);
             $TransactionType = "RETUR";
-            $query = ("INSERT INTO ttransaction (transactionid, transactiontype, relatedtransaction, transactiondate, remark, createdby, createddate) VALUES (?,?,CURRENT_TIMESTAMP,?,?,CURRENT_TIMESTAMP)");
+            $query = ("INSERT INTO ttransaction (transactionid, transactiontype, relatedtransaction, transactiondate, remark, createdby, createddate) VALUES (?,?,?,CURRENT_TIMESTAMP,?,?,CURRENT_TIMESTAMP)");
             $stmt = $conn->prepare($query);
             $stmt->bind_param("sssss", $TransactionID, $TransactionType, $RelatedTransactionID, $Remark, $userLogin);
             if (!$stmt->execute()) {

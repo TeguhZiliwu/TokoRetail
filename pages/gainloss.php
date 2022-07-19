@@ -108,11 +108,21 @@ include "../components/topapp.php";
                             <div class="row mt-3">
                                 <div class="col-12">
                                     <table id="tblProfitAndLoss" class="table table-bordered w-100 nowrap">
-                                        <tbody>
+                                        <thead>
                                             <tr>
-                                                <td colspan="2" id="lblPeriode">Periode : - s/d -</td>
+                                                <td colspan="6" id="lblPeriode">Periode : - s/d -</td>
                                             </tr>
                                             <tr>
+                                                <td>Kode Barang</td>
+                                                <td>Nama Barang</td>
+                                                <td>Total Jumlah Terjual</td>
+                                                <td>Total Harga Terjual</td>
+                                                <td>Total Modal Awal</td>
+                                                <td>Laba</td>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- <tr>
                                                 <td>Penjualan Barang</td>
                                                 <td class="table-profit"><span id="lblTotalOut">Rp 0</span></td>
                                             </tr>
@@ -123,7 +133,7 @@ include "../components/topapp.php";
                                             <tr class="table-active">
                                                 <td data-fill-color="ECECEC">Laba Bersih Usaha</td>
                                                 <td class="table-profit" data-fill-color="ECECEC"><span id="lblTotalProfit">Rp 0</span></td>
-                                            </tr>
+                                            </tr> -->
                                         </tbody>
                                     </table>
                                 </div>

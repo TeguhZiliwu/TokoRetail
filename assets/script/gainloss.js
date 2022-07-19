@@ -347,11 +347,24 @@ const loadDataProfitAndLoss = async () => {
 
     if (response.success) {
       const data = await response.data;
-
-      $("#lblTotalIn").text(convertIntToRp(data[0].TotalIn));
-      $("#lblTotalOut").text(convertIntToRp(data[0].TotalOut));
-      $("#lblTotalProfit").text(data[0].TotalProfit < 0 ? "-" + convertIntToRp(data[0].TotalProfit) : convertIntToRp(data[0].TotalProfit));
       $("#lblPeriode").text(`Periode : ${$("#txtFromDate").val()} s/d ${$("#txtToDate").val()}`);
+      $("#tblProfitAndLoss tbody").empty();
+      if (data.length > 0) {
+        let rowData = "";
+        let totalGain = 0;
+        for (let i = 0; i < data.length; i++) {
+          rowData += "<tr>" + "<td>" + data[i].ItemCode + "</td>" + "<td>" + data[i].ItemName + "</td>" + "<td>" + data[i].Qty + "</td>" + "<td>" + convertIntToRp(data[i].TotalPurchase) + "</td>" + "<td>" + convertIntToRp(data[i].TotalInitialCapital) + "</td>" + "<td>" + convertIntToRp(data[i].TotalGain) + "</td>" + "</tr>";
+          totalGain += parseInt(data[i].TotalGain);
+        }
+        rowData += '<tr class="table-active">' +
+        '<td data-fill-color="ECECEC" colspan="5">Laba Bersih Usaha</td>' +
+        '<td class="table-profit" data-fill-color="ECECEC">'+convertIntToRp(totalGain)+'</td>' +
+        "</tr>";
+        $("#tblProfitAndLoss tbody").append(rowData);
+      }
+      // $("#lblTotalIn").text(convertIntToRp(data[0].TotalIn));
+      // $("#lblTotalOut").text(convertIntToRp(data[0].TotalOut));
+      // $("#lblTotalProfit").text(data[0].TotalProfit < 0 ? "-" + convertIntToRp(data[0].TotalProfit) : convertIntToRp(data[0].TotalProfit));
       hideLoading();
     } else {
       if (response.msg.includes("[ERROR]")) {
@@ -449,10 +462,10 @@ const convertIntToRp = (data) => {
 };
 
 const exportProfitLoss = () => {
-  TableToExcel.convert(document.getElementById("tblProfitAndLoss"), { 
+  TableToExcel.convert(document.getElementById("tblProfitAndLoss"), {
     name: `ProfitLoss.xlsx`,
     sheet: {
-      name: 'Sheet 1'
-    }
+      name: "Sheet 1",
+    },
   });
-}
+};
