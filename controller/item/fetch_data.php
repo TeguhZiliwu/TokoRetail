@@ -49,16 +49,16 @@ if (!empty($userLogin)) {
         } else if ($FetchData == "findItemCode") { 
             $Search = mysqli_real_escape_string($conn, $_GET['search']);
             $resultdata = array();
-            $query = ("SELECT A.itemcode, A.itemname, IFNULL(D.qty, 0) AS qty, A.itemdesc, A.categorycode, B.category, A.itemtype, A.uomcode, C.uom, A.sellingprice, A.createdby, A.createddate, A.updatedby, A.updateddate
+            $query = ("SELECT A.itemcode, A.itembarcode, A.itemname, IFNULL(D.qty, 0) AS qty, A.itemdesc, A.categorycode, B.category, A.itemtype, A.uomcode, C.uom, A.sellingprice, A.createdby, A.createddate, A.updatedby, A.updateddate
                        FROM titem A
                        INNER JOIN tcategory B ON A.categorycode = B.categorycode
                        INNER JOIN tuom C ON A.uomcode = C.uomcode
                        LEFT JOIN tstock D ON A.itemcode = D.itemcode
-                       WHERE A.itemcode LIKE ? OR A.itemname LIKE ?
+                       WHERE (A.itemcode LIKE ? OR A.itemname LIKE ?) OR (A.itembarcode = ?)
                        ORDER BY A.itemcode ASC");
             $stmt = $conn->prepare($query);
-            $Search = '%' . $Search . '%';
-            $stmt->bind_param("ss", $Search, $Search);
+            $LikeSearch = '%' . $Search . '%';
+            $stmt->bind_param("sss", $LikeSearch, $LikeSearch, $Search);
             $stmt->execute();
             $result = $stmt->get_result();
 
@@ -66,6 +66,7 @@ if (!empty($userLogin)) {
                 while ($data = $result->fetch_assoc()) {
                     $data = array(
                         'ItemCode' => $data['itemcode'],
+                        'ItemBarcode' => $data['itembarcode'],
                         'ItemName' => $data['itemname'],
                         'Category' => $data['category'],
                         'UOM' => $data['uom'],

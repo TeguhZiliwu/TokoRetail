@@ -119,7 +119,7 @@ if (!empty($userLogin)) {
 function generatedTransactionID($conn)
 {
     $return = "";
-    $query = ("SELECT CASE WHEN EXISTS (SELECT transactionid FROM ttransaction WHERE transactionid LIKE CONCAT('TRIN',YEAR(NOW()),LPAD(MONTH(NOW()), 2, '0'),'%')) THEN CONCAT('TRIN', YEAR(NOW()),LPAD(MONTH(NOW()), 2, '0'),RIGHT(CONCAT('0000',CAST((CAST((SELECT RIGHT(transactionid,4) FROM ttransaction WHERE transactionid LIKE CONCAT('TRIN',YEAR(NOW()),LPAD(MONTH(NOW()), 2, '0'),'%') ORDER BY transactionid DESC LIMIT 1) as int) + 1) as varchar(20))), 4)) ELSE CONCAT('TRIN',YEAR(NOW()),LPAD(MONTH(NOW()), 2, '0'),'0001') END AS ID;");
+    $query = ("SELECT CASE WHEN EXISTS (SELECT transactionid FROM ttransaction WHERE transactionid LIKE CONCAT('TRIN', YEAR(NOW()), LPAD(MONTH(NOW()), 2, '0'), '%')) THEN CONCAT('TRIN', YEAR(NOW()), LPAD(MONTH(NOW()), 2, '0'), LPAD(CAST(COALESCE((SELECT RIGHT(transactionid, 4) FROM ttransaction WHERE transactionid LIKE CONCAT('TRIN', YEAR(NOW()), LPAD(MONTH(NOW()), 2, '0'), '%') ORDER BY transactionid DESC LIMIT 1), '0000') + 1 AS CHAR), 4, '0')) ELSE CONCAT('TRIN', YEAR(NOW()), LPAD(MONTH(NOW()), 2, '0'), '0001') END AS ID;");
     $id = mysqli_query($conn, $query);
     if (mysqli_num_rows($id) > 0) {
         while ($rows = mysqli_fetch_array($id)) {

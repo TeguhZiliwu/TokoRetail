@@ -62,13 +62,13 @@ include "../components/topapp.php";
                                             <tr>
                                                 <th>No.</th>
                                                 <th>Kode Barang</th>
+                                                <th>Barcode Barang</th>
                                                 <th>Nama Barang</th>
                                                 <th>Deskripsi Barang</th>
                                                 <th>Kategori Barang</th>
                                                 <th>Satuan</th>
                                                 <th>Jenis Barang</th>
                                                 <th>Harga Jual</th>
-
                                                 <th>Dibuat Oleh</th>
                                                 <th>Tanggal Dibuat</th>
                                                 <th>Diubah Oleh</th>
@@ -86,6 +86,10 @@ include "../components/topapp.php";
                                     <div class="mb-3">
                                         <label for="txtItemCode" class="form-label">Kode Barang</label>
                                         <input type="text" class="form-control" id="txtItemCode" placeholder="[AUTO]" autocomplete="off" maxlength="20" disabled>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="txtItemBarcode" class="form-label">Barcode Barang</label>
+                                        <input type="text" class="form-control maintenance-form" id="txtItemBarcode" placeholder="Masukkan Barcode Barang" autocomplete="off" maxlength="200">
                                     </div>
                                     <div class="mb-3">
                                         <label for="txtItemName" class="form-label">Nama Barang <span class="text-danger">*</span></label>

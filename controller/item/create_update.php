@@ -20,6 +20,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 if (!empty($userLogin)) {
 	try {
 		$ItemCode = mysqli_real_escape_string($conn, $postdata->ItemCode);
+		$ItemBarcode = mysqli_real_escape_string($conn, $postdata->ItemBarcode);
 		$ItemName = mysqli_real_escape_string($conn, $postdata->ItemName);
 		$ItemDesc = mysqli_real_escape_string($conn, $postdata->ItemDesc);
 		$Category = mysqli_real_escape_string($conn, $postdata->Category);
@@ -46,9 +47,9 @@ if (!empty($userLogin)) {
 				exit();
 			} else {
                 $AutoItemCode = generatedItemCode($conn);
-				$query = ("INSERT INTO titem (itemcode, itemname, itemdesc, categorycode, uomcode, itemtype, sellingprice, createdby, createddate) VALUES (?,?,?,?,?,?,?,?, CURRENT_TIMESTAMP)");
+				$query = ("INSERT INTO titem (itemcode, itembarcode, itemname, itemdesc, categorycode, uomcode, itemtype, sellingprice, createdby, createddate) VALUES (?,?,?,?,?,?,?,?,?, CURRENT_TIMESTAMP)");
 				$stmt = $conn->prepare($query);
-				$stmt->bind_param("ssssssss", $AutoItemCode, $ItemName, $ItemDesc, $Category, $UOM, $ItemType, $SellingPrice, $userLogin);
+				$stmt->bind_param("sssssssss", $AutoItemCode, $ItemBarcode, $ItemName, $ItemDesc, $Category, $UOM, $ItemType, $SellingPrice, $userLogin);
 				$stmt->execute();
 			}
 		} else {
@@ -68,9 +69,9 @@ if (!empty($userLogin)) {
 				closeConn($conn);
 				exit();
 			} else {
-				$query = ("UPDATE titem SET itemname=?, itemdesc=?, categorycode=?, uomcode=?, itemtype=?, sellingprice=?, updatedby=?, updateddate=CURRENT_TIMESTAMP WHERE itemcode=?");
+				$query = ("UPDATE titem SET itembarcode=?, itemname=?, itemdesc=?, categorycode=?, uomcode=?, itemtype=?, sellingprice=?, updatedby=?, updateddate=CURRENT_TIMESTAMP WHERE itemcode=?");
 				$stmt = $conn->prepare($query);
-				$stmt->bind_param("ssssssss", $ItemName, $ItemDesc, $Category, $UOM, $ItemType, $SellingPrice, $userLogin, $ItemCode);
+				$stmt->bind_param("sssssssss", $ItemBarcode, $ItemName, $ItemDesc, $Category, $UOM, $ItemType, $SellingPrice, $userLogin, $ItemCode);
 				$stmt->execute();
 			}
 		}
@@ -108,7 +109,7 @@ if (!empty($userLogin)) {
 
 function generatedItemCode($conn){
 	$return = "";
-	$query = ("SELECT CASE WHEN EXISTS (SELECT itemcode FROM titem WHERE itemcode LIKE CONCAT('IC',YEAR(NOW()),LPAD(MONTH(NOW()), 2, '0'),'%')) THEN CONCAT('IC', YEAR(NOW()),LPAD(MONTH(NOW()), 2, '0'),RIGHT(CONCAT('0000',CAST((CAST((SELECT RIGHT(itemcode,4) FROM titem WHERE itemcode LIKE CONCAT('IC',YEAR(NOW()),LPAD(MONTH(NOW()), 2, '0'),'%') ORDER BY itemcode DESC LIMIT 1) as int) + 1) as varchar(20))), 4)) ELSE CONCAT('IC',YEAR(NOW()),LPAD(MONTH(NOW()), 2, '0'),'0001') END AS ID");
+	$query = ("SELECT CASE WHEN EXISTS (SELECT itemcode FROM titem WHERE itemcode LIKE CONCAT('IC', YEAR(NOW()), LPAD(MONTH(NOW()), 2, '0'), '%')) THEN CONCAT('IC', YEAR(NOW()), LPAD(MONTH(NOW()), 2, '0'), LPAD(CAST(COALESCE((SELECT RIGHT(itemcode, 4) FROM titem WHERE itemcode LIKE CONCAT('IC', YEAR(NOW()), LPAD(MONTH(NOW()), 2, '0'), '%') ORDER BY itemcode DESC LIMIT 1), '0000') + 1 AS CHAR), 4, '0')) ELSE CONCAT('IC', YEAR(NOW()), LPAD(MONTH(NOW()), 2, '0'), '0001') END AS ID");
 	$id = mysqli_query($conn, $query);				
 	if (mysqli_num_rows($id) > 0) {  
 		while ($rows = mysqli_fetch_array($id))

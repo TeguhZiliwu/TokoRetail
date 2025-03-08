@@ -16,7 +16,7 @@ if (!empty($userLogin)) {
         $Search = mysqli_real_escape_string($conn, $_GET['search']);
         $resultdata = array();
 
-        $query = ("SELECT A.itemcode, A.itemname, A.itemdesc, A.categorycode, B.category, A.itemtype, A.uomcode, C.uom, A.sellingprice, A.createdby, A.createddate, A.updatedby, A.updateddate
+        $query = ("SELECT A.itemcode, A.itembarcode, A.itemname, A.itemdesc, A.categorycode, B.category, A.itemtype, A.uomcode, C.uom, A.sellingprice, A.createdby, A.createddate, A.updatedby, A.updateddate
                    FROM titem A
                    INNER JOIN tcategory B ON A.categorycode = B.categorycode
                    INNER JOIN tuom C ON A.uomcode = C.uomcode
@@ -32,6 +32,7 @@ if (!empty($userLogin)) {
             while ($data = $result->fetch_assoc()) {
                 $data = array(
                     'ItemCode' => $data['itemcode'],
+                    'ItemBarcode' => $data['itembarcode'],
                     'ItemName' => $data['itemname'],
                     'ItemDesc' => $data['itemdesc'],
                     'CategoryCode' => $data['categorycode'],

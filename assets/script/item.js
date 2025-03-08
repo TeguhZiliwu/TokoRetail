@@ -49,6 +49,7 @@ const validateSubmit = () => {
     const validateTitle = "Data tidak valid!";
     const validateDesc = "Silahkan lengkapi data dengan benar!";
     const ItemName = $("#txtItemName");
+    const ItemBarcode = $("#txtItemBarcode");
     const ItemDesc = $("#txtItemDesc");
     const Category = $("#ddCategory");
     const UOM = $("#ddUOM");
@@ -59,6 +60,11 @@ const validateSubmit = () => {
     if (ItemName.val().replace(/\s/g, "") == "" || ItemName.val().length > 100) {
         valid = false;
         ItemName.addClass("is-invalid");
+    }
+
+    if (ItemBarcode.val().replace(/\s/g, "") == "" || ItemBarcode.val().length > 200) {
+        valid = false;
+        ItemBarcode.addClass("is-invalid");
     }
 
     if (ItemDesc.val().replace(/\s/g, "") == "" || ItemDesc.val().length > 2000) {
@@ -170,6 +176,7 @@ $("#tblMainData").on("click", 'button[name="editaction"]', async function () {
     edit = true;
     const rowData = mainTable.row($(this).parents("tr")).data();
     $("#txtItemCode").val(rowData.ItemCode);
+    $("#txtItemBarcode").val(rowData.ItemBarcode);
     $("#txtItemName").val(rowData.ItemName);
     $("#txtItemDesc").val(rowData.ItemDesc);
     $("#ddCategory").val(rowData.CategoryCode).trigger("change");
@@ -342,6 +349,10 @@ const mainTable = $("#tblMainData").DataTable({
         },
         {
             data: "ItemCode",
+            className: "align-middle",
+        },
+        {
+            data: "ItemBarcode",
             className: "align-middle",
         },
         {
@@ -637,6 +648,7 @@ const saveData = async () => {
     try {
         const url = "../controller/item/create_update.php";
         const ItemCode = $("#txtItemCode").val();
+        const ItemBarcode = $("#txtItemBarcode").val();
         const ItemName = $("#txtItemName").val();
         const ItemDesc = $("#txtItemDesc").val();
         const Category = $("#ddCategory").val();
@@ -645,6 +657,7 @@ const saveData = async () => {
         const SellingPrice = $("#txtSellingPrice").val();
         const param = {
             ItemCode: ItemCode,
+            ItemBarcode: ItemBarcode,
             ItemName: ItemName,
             ItemDesc: ItemDesc,
             Category: Category,

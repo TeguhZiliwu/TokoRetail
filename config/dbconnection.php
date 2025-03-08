@@ -12,11 +12,12 @@ function openConn()
 	    $config = parse_ini_file($filepath, true);
 
 		$servername = $config['servername'];
+		$port = $config['port'];
 		$database = $config['database'];
 		$username = $config['username'];
 		$password = $config['password'];
 
-	 	$conn = new mysqli($servername, $username, $password, $database) or die("Connect failed: %s\n". $conn -> error);
+	 	$conn = new mysqli($servername, $username, $password, $database, $port) or die("Connect failed: %s\n". $conn -> error);
 
 	 	return $conn;
 	} catch (\Throwable $e) {
